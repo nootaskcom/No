@@ -1,0 +1,2718 @@
+<!DOCTYPE html><html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nootask.dev - Bảng Quản Trị Viên (ACP)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* ===================================================================
+   NOOTASK.DEV — ADMIN CONTROL PANEL
+   Bảng màu & hệ thống thiết kế hợp nhất (cyan → pink, nền tối, kính mờ)
+=================================================================== */
+
+/* ---------- Thanh kéo (scrollbar) ---------- */
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: rgba(8, 12, 24, 0.5); }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #00bfff, #ff2ea6); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #33d1ff, #ff5cc0); }
+html { scrollbar-width: thin; scrollbar-color: #ff2ea6 rgba(8, 12, 24, 0.5); }
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease; }
+
+:root {
+    /* Màu thương hiệu */
+    --accent-cyan: #00bfff;
+    --accent-cyan-deep: #0077cc;
+    --accent-pink: #ff2ea6;
+    --accent-pink-deep: #d60072;
+    --accent-gradient: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
+
+    /* Nền */
+    --bg-body: radial-gradient(circle at 15% -10%, #15203a 0%, #0d1326 45%, #07090f 100%);
+    --bg-dash: radial-gradient(circle at 85% 0%, #173058 0%, #2a1233 42%, #08090f 100%);
+    --bg-sidebar: rgba(13, 18, 30, 0.68);
+    --bg-card: rgba(19, 25, 42, 0.46);
+    --bg-input: rgba(255, 255, 255, 0.05);
+
+    /* Viền & chữ */
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-color-soft: rgba(255, 255, 255, 0.05);
+    --text-main: #f3f6fc;
+    --text-sub: #aab6cc;
+    --text-muted: #7e8aa3;
+
+    /* Bóng & bo góc dùng chung */
+    --shadow: rgba(0, 0, 0, 0.45);
+    --shadow-card: 0 18px 40px -12px rgba(0, 0, 0, 0.55);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+}
+
+body { background: var(--bg-body); color: var(--text-main); overflow-x: hidden; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+.hidden { display: none !important; }
+
+h1, h2, h3, h4 { font-family: 'Manrope', 'Inter', sans-serif; letter-spacing: -0.01em; }
+
+/* ---------- Khi dùng hình nền tùy chọn ---------- */
+body.has-custom-bg .dash-container { background: transparent !important; }
+body.has-custom-bg { background: transparent !important; }
+body.opaque-cards { --bg-card: rgba(8, 11, 20, 0.97); --bg-sidebar: rgba(8, 11, 20, 0.97); }
+
+/* ---------- Khung avatar xoay ---------- */
+@keyframes spinFrame { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+.spinning-avatar-frame { animation: spinFrame 10s linear infinite; transform-origin: center center; }
+
+/* ---------- Hiệu ứng rơi theo mùa ---------- */
+#particle-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden; }
+.falling-img { position: absolute; top: -150px; user-select: none; pointer-events: none; z-index: 1; }
+@keyframes windFallRight {
+    0% { transform: translateY(-50px) translateX(0) rotate(0deg); opacity: var(--start-opacity, 1); }
+    100% { transform: translateY(110vh) translateX(var(--horizontal-drift-right)) rotate(360deg); opacity: 0.1; }
+}
+
+/* ---------- Chữ đổi màu cầu vồng (vai trò trong sidebar) ---------- */
+@keyframes cyberBorder { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+.text-rainbow-glow {
+    background: linear-gradient(90deg, #00bfff, #ff2ea6, #00f2fe, #ff0844, #00bfff);
+    background-size: 300% 300%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    animation: cyberBorder 4s linear infinite;
+    font-weight: 700; font-size: 12.5px;
+}
+
+/* ===================== THÔNG BÁO TRẠNG THÁI ===================== */
+.success-msg {
+    display: none;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    color: #4ade80;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    animation: slideIn 0.3s ease;
+}
+
+/* ===================== COMPONENT CHUNG ===================== */
+.setting-box { background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-bottom: 10px; }
+.setting-box-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 10px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+
+/* ===================== KHUNG CẤU HÌNH GỌN, CÓ MÀU PHÂN BIỆT ===================== */
+/* Dùng cho các mục cấu hình nhỏ trong từng tab — nhỏ gọn hơn profile-box, có viền màu bên trái để phân biệt từng mục (giống mẫu "Cấu hình tiền thưởng") */
+.config-box {
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--cb-accent, var(--accent-cyan));
+    border-radius: var(--radius-md);
+    padding: 13px 15px;
+    margin-bottom: 12px;
+}
+.config-box + .config-box { margin-top: -2px; }
+.config-box-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--cb-accent, var(--accent-cyan));
+}
+.config-box-hint { font-size: 11.5px; color: var(--text-muted); line-height: 1.55; margin-top: 6px; }
+.config-box.cb-pink   { --cb-accent: var(--accent-pink); }
+.config-box.cb-cyan   { --cb-accent: var(--accent-cyan); }
+.config-box.cb-red    { --cb-accent: #ef4444; }
+.config-box.cb-amber  { --cb-accent: #f59e0b; }
+.config-box.cb-purple { --cb-accent: #a855f7; }
+.config-box.cb-green  { --cb-accent: #10b981; }
+.setting-item { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border-color-soft); font-size: 13px; color: var(--text-sub); }
+.setting-item:last-child { border-bottom: none; padding-bottom: 0; }
+.setting-item:first-child { padding-top: 0; }
+.setting-info { display: flex; align-items: center; gap: 8px; color: var(--text-sub); }
+.setting-info span { color: var(--text-main); font-size: 13px; }
+
+.switch-ui { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+.switch-ui input { opacity: 0; width: 0; height: 0; }
+.switch-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #2b3344; transition: .3s; border-radius: 20px; }
+.switch-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+input:checked + .switch-slider { background: var(--accent-gradient); }
+input:checked + .switch-slider:before { transform: translateX(18px); }
+
+/* ---------- Nút bấm ---------- */
+.btn { border: none; padding: 12px 22px; border-radius: var(--radius-sm); cursor: pointer; font-size: 14.5px; font-weight: 600; color: white; transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease; display: inline-flex; align-items: center; gap: 8px; justify-content: center; min-height: 44px; letter-spacing: 0.01em; }
+.btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+.btn:active { transform: translateY(0); filter: brightness(0.96); }
+.btn-blue { background: linear-gradient(135deg, #00aaff, #0077cc); box-shadow: 0 10px 24px -6px rgba(0, 171, 255, 0.45); }
+.btn-pink { background: linear-gradient(135deg, #ff2ea6, #d60072); box-shadow: 0 10px 24px -6px rgba(255, 46, 166, 0.45); }
+.btn-green { background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 10px 24px -6px rgba(34, 197, 94, 0.4); }
+.btn-red { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 10px 24px -6px rgba(239, 68, 68, 0.4); }
+.btn-purple { background: linear-gradient(135deg, #a855f7, #7c3aed); box-shadow: 0 10px 24px -6px rgba(168, 85, 247, 0.4); }
+.btn-amber { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 10px 24px -6px rgba(245, 158, 11, 0.4); }
+
+.btn-logout { background: transparent; border: none; color: #ef4444; font-size: 14.5px; font-weight: 600; padding: 12px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.25s ease, color 0.25s ease; width: 100%; }
+.btn-logout:hover { background: rgba(239, 68, 68, 0.12); }
+
+/* ===================== FORM ĐĂNG NHẬP / BÁO LỖI TRUY CẬP ===================== */
+.auth-wrap { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle at top, #101a3a, #070b1a); padding: 20px; }
+.auth-box { width: 420px; background: rgba(13, 18, 32, 0.85); backdrop-filter: blur(22px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-xl); padding: 42px; box-shadow: var(--shadow-card); }
+.auth-title { font-size: 30px; margin-bottom: 8px; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-align: center; font-weight: 800; font-family: 'Manrope', sans-serif; }
+.auth-sub { color: var(--text-muted); font-size: 14.5px; margin-bottom: 28px; text-align: center; line-height: 1.6; }
+.auth-input { width: 100%; padding: 15px 18px; margin-bottom: 14px; border: 1px solid var(--border-color); outline: none; border-radius: var(--radius-md); background: var(--bg-input); color: var(--text-main); font-size: 15px; }
+.auth-input-sm { width: 100%; padding: 11px 14px; margin-bottom: 10px; border: 1px solid var(--border-color); outline: none; border-radius: var(--radius-sm); background: var(--bg-input); color: var(--text-main); font-size: 13px; }
+.auth-input::placeholder, .auth-input-sm::placeholder { color: rgba(255, 255, 255, 0.4); }
+.auth-input:focus, .auth-input-sm:focus, select:focus, textarea:focus { border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.15); }
+select, textarea { color: var(--text-main); }
+
+input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+.auth-btn { width: 100%; padding: 16px; border: none; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; font-size: 16px; background: var(--accent-gradient); color: white; transition: filter 0.25s ease, transform 0.25s ease; }
+.auth-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.auth-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 12px 14px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 13.5px; display: none; animation: slideIn 0.3s ease; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ===================== BỐ CỤC BẢNG ĐIỀU KHIỂN ===================== */
+.dash-container { display: flex; min-height: 100vh; background: var(--bg-dash); }
+
+.sidebar { width: 268px; background-color: var(--bg-sidebar); backdrop-filter: blur(18px); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; position: fixed; height: 100vh; left: 0; top: 0; z-index: 99; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.sidebar-profile { padding: 24px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-color); transition: padding 0.3s ease; }
+.avatar-box { width: 44px; height: 44px; border-radius: 50%; background: var(--accent-gradient); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; border: 2px solid rgba(255, 255, 255, 0.18); color: white; overflow: hidden; box-shadow: 0 0 14px rgba(0, 191, 255, 0.45); position: relative; z-index: 1; }
+.profile-info { flex-grow: 1; min-width: 0; transition: opacity 0.2s ease; }
+.profile-info h4 { font-size: 15px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profile-info p { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+.sidebar-menu { padding: 16px 12px; list-style: none; display: flex; flex-direction: column; gap: 4px; flex-grow: 1; overflow-y: auto; }
+.sidebar-menu .menu-item i { font-size: 15px; width: 20px; text-align: center; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.menu-item a { display: flex; align-items: center; gap: 13px; padding: 12px 14px; color: var(--text-sub); text-decoration: none; font-size: 13.5px; font-weight: 500; border-radius: var(--radius-sm); transition: background 0.25s ease, color 0.25s ease; border-left: 3px solid transparent; }
+.menu-item.active a, .menu-item a:hover { background: linear-gradient(90deg, rgba(0, 191, 255, 0.16) 0%, rgba(255, 46, 166, 0.16) 100%); color: #ffffff !important; }
+.menu-item.active a i, .menu-item a:hover i { -webkit-text-fill-color: #ffffff !important; }
+.menu-item.active a { border-left-color: #ff2ea6; font-weight: 600; }
+
+.sidebar-footer { padding: 16px 20px 24px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; }
+
+/* ---------- Sidebar thu gọn ---------- */
+body.sidebar-collapsed .sidebar { width: 76px; }
+body.sidebar-collapsed .main-content { margin-left: 76px; }
+body.sidebar-collapsed .sidebar .profile-info { display: none !important; }
+body.sidebar-collapsed .sidebar .sidebar-profile { justify-content: center; padding: 24px 5px; }
+body.sidebar-collapsed .sidebar .sidebar-profile div[style*="width: 55px"] { margin-right: 0 !important; }
+body.sidebar-collapsed .sidebar .menu-text { display: none !important; }
+body.sidebar-collapsed .sidebar .menu-item a { justify-content: center; padding: 12px 0; border-left: 3px solid transparent; }
+body.sidebar-collapsed .sidebar .btn-logout { padding: 12px 0; justify-content: center; }
+
+/* ===================== NỘI DUNG CHÍNH ===================== */
+.main-content { margin-left: 268px; flex-grow: 1; padding: 34px 32px; position: relative; z-index: 10; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.welcome-header { margin-bottom: 26px; }
+.welcome-header h2 { font-size: 26px; font-weight: 800; display: flex; align-items: center; gap: 10px; letter-spacing: -0.01em; }
+.welcome-header p { color: var(--text-sub); font-size: 14px; margin-top: 6px; line-height: 1.7; }
+
+/* ---------- Hiệu ứng thẻ khi hover ---------- */
+.stat-card, .setting-box, .profile-box { transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; }
+.stat-card:hover, .setting-box:hover, .profile-box:hover { transform: translateY(-3px); box-shadow: 0 16px 32px -10px rgba(0, 0, 0, 0.5); border-color: rgba(0, 191, 255, 0.25) !important; }
+
+.stat-card { background: var(--bg-card); border: 1px solid var(--border-color) !important; border-radius: var(--radius-lg); position: relative; overflow: hidden; }
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 28px; }
+@media (min-width: 1200px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+.stat-card { padding: 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 10px 26px -10px rgba(0, 0, 0, 0.4); }
+.stat-card-content { display: flex; flex-direction: column; width: 100%; text-align: left; }
+.stat-label { font-size: 12.5px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.stat-value { font-size: 19px; font-weight: 800; margin-top: 4px; color: #ffffff; font-family: 'Manrope', sans-serif; }
+.stat-value span { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-left: 2px; }
+.stat-icon { width: 42px; height: 42px; border-radius: 13px; background: #0ea5e9; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 16px; flex-shrink: 0; box-shadow: 0 6px 14px -4px rgba(0,0,0,0.4); }
+.stat-card:nth-child(1) .stat-icon { background: linear-gradient(135deg, #34d399, #059669); }
+.stat-card:nth-child(2) .stat-icon { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.stat-card:nth-child(3) .stat-icon { background: linear-gradient(135deg, #c084fc, #9333ea); }
+.stat-card:nth-child(4) .stat-icon { background: linear-gradient(135deg, #fbbf24, #d97706); }
+
+.section-title { font-size: 17px; font-weight: 700; margin-bottom: 22px; display: flex; align-items: center; gap: 10px; margin-top: 32px; font-family: 'Manrope', sans-serif; }
+.section-title i { color: #ff2ea6; }
+
+/* ===================== HỘP HỒ SƠ / ĐỔI MẬT KHẨU ===================== */
+.profile-box, .password-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; max-width: 500px; box-shadow: var(--shadow-card); backdrop-filter: blur(10px); margin-bottom: 16px; }
+.profile-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border-color-soft); }
+.profile-item:last-child { border-bottom: none; padding-bottom: 0; }
+.profile-item:first-of-type { padding-top: 0; }
+.profile-label { font-size: 13px; color: var(--text-muted); }
+.profile-value { font-size: 14.5px; font-weight: 600; color: var(--text-main); }
+.role-badge { padding: 4px 10px; border-radius: 7px; font-size: 11.5px; font-weight: 700; }
+.role-admin { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.role-user { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+
+/* ===================== BẢNG DỮ LIỆU ===================== */
+.admin-table-wrap { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; overflow-x: auto; margin-top: 14px; box-shadow: var(--shadow-card); backdrop-filter: blur(10px); }
+.admin-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; text-align: left; font-size: 13.5px; }
+.admin-table th, .admin-table td { padding: 14px 16px; border-bottom: none; }
+.admin-table thead tr th { background: rgba(255, 255, 255, 0.035); color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px; }
+.admin-table tbody tr { background: rgba(255, 255, 255, 0.028); }
+.admin-table tbody tr:hover { background: rgba(255, 255, 255, 0.06); }
+.admin-table td:first-child, .admin-table th:first-child { border-top-left-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-sm); }
+.admin-table td:last-child, .admin-table th:last-child { border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); }
+
+.action-btns { display: flex; gap: 8px; align-items: center; white-space: nowrap; }
+.compact-action-row { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: nowrap; white-space: nowrap; }
+.compact-action-row .btn { padding: 7px 10px; font-size: 11px; border-radius: 8px; min-height: auto; white-space: nowrap; font-weight: 600; flex-shrink: 0; }
+
+/* ===================== MODAL CẮT ẢNH AVATAR ===================== */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(4, 6, 12, 0.82); backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+.modal-content { background: rgba(13, 18, 32, 0.96); border: 1px solid var(--border-color); backdrop-filter: blur(20px); padding: 28px; border-radius: var(--radius-lg); width: 90%; max-width: 350px; text-align: center; box-shadow: var(--shadow-card); }
+.crop-window { width: 250px; height: 250px; border-radius: 50%; border: 3px dashed rgba(0, 191, 255, 0.5); margin: 0 auto; overflow: hidden; position: relative; background: #000; cursor: move; }
+.crop-window img { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: none; max-height: none; user-select: none; pointer-events: none; }
+
+/* ===================== POPUP THÔNG BÁO HỆ THỐNG ===================== */
+.custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(4, 6, 12, 0.78); backdrop-filter: blur(5px); z-index: 10001; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.custom-modal-box { background: rgba(13, 18, 32, 0.97); border: 1px solid rgba(255, 46, 166, 0.35); padding: 32px; text-align: center; border-radius: var(--radius-xl); width: 90%; max-width: 400px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 24px rgba(255, 46, 166, 0.12); backdrop-filter: blur(16px); }
+.custom-modal-box h3 { font-size: 21px; margin-bottom: 12px; color: #fff; font-family: 'Manrope', sans-serif; }
+.custom-modal-box p { font-size: 14.5px; margin-bottom: 26px; line-height: 1.6; color: var(--text-sub); }
+.custom-modal-box button { padding: 12px 24px; font-size: 14.5px; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: 0.25s; font-weight: 600; }
+.custom-modal-box button:hover { opacity: 0.92; transform: translateY(-1px); }
+
+/* ===================== NÚT & KHUNG CÀI ĐẶT NỔI ===================== */
+.settings-trigger-btn { position: fixed; top: 20px; right: 20px; z-index: 10002; background: rgba(13, 18, 32, 0.7); border: 1px solid var(--border-color); color: var(--text-sub); font-size: 19px; cursor: pointer; transition: color 0.25s ease, transform 0.4s ease, border-color 0.25s ease; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+.settings-trigger-btn:hover { color: #ffffff; transform: rotate(75deg); border-color: var(--accent-cyan); }
+.floating-settings-panel { position: fixed; top: 70px; right: 20px; width: 300px; background: rgba(9, 12, 22, 0.97); backdrop-filter: blur(25px); border: 1px solid rgba(255, 46, 166, 0.25); border-radius: var(--radius-lg); padding: 18px; z-index: 10001; box-shadow: var(--shadow-card); max-height: 85vh; overflow-y: auto; }
+
+/* ---------- Tùy chỉnh nền web ---------- */
+.bg-custom-control-group { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.bg-btn-option { background: rgba(255, 255, 255, 0.045); border: 1px solid var(--border-color); color: #ffffff; padding: 10px 12px; font-size: 12px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; width: 100%; }
+.bg-btn-option:hover { transform: translateY(-1px); box-shadow: 0 6px 16px -4px rgba(255, 46, 166, 0.25); }
+.bg-btn-reset { background: linear-gradient(135deg, rgba(0, 191, 255, 0.1), rgba(0, 119, 204, 0.15)); border-color: rgba(0, 191, 255, 0.3); }
+.bg-btn-reset:hover { background: linear-gradient(135deg, rgba(0, 191, 255, 0.2), rgba(0, 119, 204, 0.3)); border-color: var(--accent-cyan); }
+.bg-btn-image { background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(124, 58, 237, 0.15)); border-color: rgba(168, 85, 247, 0.3); }
+.bg-btn-image:hover { background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(124, 58, 237, 0.3)); border-color: #a855f7; }
+.bg-btn-video { background: linear-gradient(135deg, rgba(255, 46, 166, 0.1), rgba(214, 0, 114, 0.15)); border-color: rgba(255, 46, 166, 0.3); }
+.bg-btn-video:hover { background: linear-gradient(135deg, rgba(255, 46, 166, 0.2), rgba(214, 0, 114, 0.3)); border-color: var(--accent-pink); }
+
+/* ===================== MENU HAMBURGER (MOBILE) ===================== */
+#mobileHamburgerBtn { display: none; position: fixed; top: 14px; left: 14px; z-index: 200; background: rgba(13, 18, 32, 0.95); border: 1px solid var(--border-color); color: #fff; font-size: 19px; width: 46px; height: 46px; border-radius: var(--radius-sm); cursor: pointer; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); transition: background 0.25s ease; }
+#mobileHamburgerBtn:hover { background: rgba(0, 191, 255, 0.2); }
+#mobileMenuOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.55); z-index: 98; backdrop-filter: blur(2px); }
+#mobileMenuOverlay.open { display: block; }
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 900px) {
+    #mobileHamburgerBtn { display: flex; }
+    .sidebar { width: 72vw !important; height: 100vh !important; position: fixed !important; top: 0 !important; left: -72vw !important; border-right: 1px solid var(--border-color) !important; border-bottom: none !important; z-index: 99 !important; transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; flex-direction: column !important; }
+    .sidebar.mobile-open { left: 0 !important; }
+    .sidebar-menu { flex-direction: column !important; flex-wrap: nowrap !important; overflow-y: auto !important; padding: 12px !important; }
+    .main-content { margin-left: 0 !important; padding: 18px 16px; padding-top: 72px; }
+    .auth-box { width: 100%; padding: 30px 24px; }
+    .floating-settings-panel { width: calc(100vw - 32px); right: 16px; }
+}
+
+@media (max-width: 768px) {
+    .main-content { padding: 15px 12px; padding-top: 68px; }
+    .stat-card { padding: 12px 14px; }
+    .stat-label { font-size: 11px; }
+    .stat-value { font-size: 13px; }
+    .stats-grid { grid-template-columns: 1fr !important; gap: 10px; }
+    .section-title { font-size: 16px; margin-top: 20px; margin-bottom: 15px; }
+    .profile-box, .password-box { max-width: 100%; }
+    .auth-input, .auth-input-sm, select { font-size: 14px; padding: 11px 13px; }
+    .btn { padding: 10px 16px; font-size: 13px; }
+    .admin-table { font-size: 12px; }
+    .admin-table th, .admin-table td { padding: 8px 6px; }
+    .setting-item { font-size: 12px; }
+    .floating-settings-panel { width: 90vw; max-width: 280px; }
+    .settings-trigger-btn { width: 36px; height: 36px; font-size: 18px; }
+}
+
+@media (max-width: 600px) {
+    .sidebar { width: 80vw !important; }
+    .main-content { padding: 12px 10px; padding-top: 64px; }
+    .auth-box { width: 95%; padding: 20px 16px; }
+    .settings-trigger-btn { top: 65px; right: 10px; width: 34px; height: 34px; font-size: 16px; }
+    .floating-settings-panel { width: 95vw; right: 5px; top: 105px; padding: 12px; max-height: 80vh; }
+    .stat-icon { width: 24px; height: 24px; font-size: 10px; }
+    .stat-card { gap: 6px; padding: 8px 10px; }
+    .stat-label { font-size: 9px; }
+    .stat-value { font-size: 12px; }
+    .section-title { font-size: 14px; margin-top: 15px; margin-bottom: 12px; }
+    .auth-title { font-size: 24px; }
+    .btn { padding: 9px 14px; font-size: 12px; }
+    .admin-table { font-size: 11px; }
+    .admin-table th, .admin-table td { padding: 6px 4px; }
+    .setting-box { padding: 10px; margin-bottom: 10px; }
+    .setting-box-title { font-size: 10px; margin-bottom: 8px; }
+    .config-box { padding: 10px 12px; margin-bottom: 10px; }
+    .config-box-title { font-size: 11px; }
+    .setting-item { padding: 6px 0; font-size: 11px; }
+    .switch-ui { width: 35px; height: 18px; }
+    .switch-slider:before { height: 12px; width: 12px; }
+    input:checked + .switch-slider:before { transform: translateX(17px); }
+}
+
+@media (max-width: 480px) {
+    .sidebar { width: 85vw !important; }
+    .main-content { padding: 10px 8px; padding-top: 60px; }
+    .auth-box { width: 100%; padding: 16px 12px; }
+    .auth-title { font-size: 22px; }
+    .auth-input, .auth-input-sm, select { font-size: 13px; padding: 10px 12px; }
+    .btn { padding: 8px 12px; font-size: 11px; min-height: 36px; }
+    .stat-card { padding: 6px 8px; gap: 4px; }
+    .stat-icon { width: 20px; height: 20px; font-size: 8px; }
+    .stat-label { font-size: 8px; }
+    .stat-value { font-size: 11px; }
+    .section-title { font-size: 13px; margin-top: 12px; margin-bottom: 10px; }
+    .profile-box, .password-box { padding: 14px; }
+    .profile-item { padding: 8px 0; font-size: 12px; }
+    .admin-table { font-size: 10px; }
+    .admin-table th, .admin-table td { padding: 4px 2px; }
+    .settings-trigger-btn { width: 32px; height: 32px; font-size: 14px; top: 60px; right: 8px; }
+    .floating-settings-panel { width: 95vw; right: 3px; top: 100px; padding: 10px; }
+    .setting-box { padding: 8px; }
+    .setting-box-title { font-size: 9px; margin-bottom: 6px; }
+    .config-box { padding: 9px 10px; }
+    .config-box-title { font-size: 10.5px; }
+    .setting-item { padding: 4px 0; font-size: 10px; }
+}
+
+</style>
+</head>
+<body>
+
+<div id="particle-container"></div>
+
+<!-- Video nền và Ảnh nền động ẩn dành riêng cho tệp đa phương tiện tùy chọn -->
+<video id="webCustomBgVideo" autoplay loop muted playsinline style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -5; pointer-events: none; display: none;"></video>
+<img id="webCustomBgImage" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -5; pointer-events: none; display: none;">
+
+<!-- Nút cài đặt bánh răng màu xám ở phía góc trên bên phải -->
+<button id="settingsTriggerBtn" class="settings-trigger-btn hidden" onclick="toggleSettingsPanel()" title="Cài đặt hiệu ứng & nền">
+    <i class="fa-solid fa-gear"></i>
+</button>
+
+<!-- Khung Menu nổi chứa mục hiệu ứng và cài đặt hình nền -->
+<div id="settingsPanel" class="floating-settings-panel hidden">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+        <h4 style="font-size: 13px; color: var(--text-main); font-weight: bold; text-transform: uppercase;"><i class="fa-solid fa-sliders"></i> Tùy chỉnh giao diện</h4>
+        <button onclick="toggleSettingsPanel()" style="background:transparent; border:none; color: var(--text-muted); cursor:pointer; font-size:16px;"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <div class="setting-box" style="margin-bottom: 12px;">
+        <div class="setting-box-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Mục hiệu ứng & Tính năng</div>
+        <div class="setting-item"><div class="setting-info"><span>Mùa Xuân</span></div><label class="switch-ui"><input type="checkbox" class="emoji-switch" value="spring" onchange="applyMultiEffects()"><span class="switch-slider"></span></label></div>
+        <div class="setting-item"><div class="setting-info"><span>Mùa Hè</span></div><label class="switch-ui"><input type="checkbox" class="emoji-switch" value="summer" onchange="applyMultiEffects()"><span class="switch-slider"></span></label></div>
+        <div class="setting-item"><div class="setting-info"><span>Mùa Thu</span></div><label class="switch-ui"><input type="checkbox" class="emoji-switch" value="autumn" onchange="applyMultiEffects()"><span class="switch-slider"></span></label></div>
+        <div class="setting-item"><div class="setting-info"><span>Mùa Đông</span></div><label class="switch-ui"><input type="checkbox" class="emoji-switch" value="winter" onchange="applyMultiEffects()"><span class="switch-slider"></span></label></div>
+        
+        <!-- Bật tắt thu gọn sidebar kiểu gọn gàng chỉ giữ emoji -->
+        <div class="setting-item" style="margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
+            <div class="setting-info"><i class="fa-solid fa-arrows-left-right"></i> <span>Thu gọn thanh Menu</span></div>
+            <label class="switch-ui"><input type="checkbox" id="sidebarCollapseSwitch" onchange="toggleSidebarCollapse(this.checked)"><span class="switch-slider"></span></label>
+        </div>
+
+        <!-- BẬT TẮT CHẾ ĐỘ NỀN KÍNH ĐẬM MÀU GIÚP NHÌN RÕ CHỮ KHI THAY NỀN MỚI -->
+        <div class="setting-item" style="margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 8px;">
+            <div class="setting-info"><i class="fa-solid fa-eye"></i> <span>Nền thẻ đậm màu (Chống chói)</span></div>
+            <label class="switch-ui"><input type="checkbox" id="glassOpacitySwitch" onchange="toggleGlassOpacity(this.checked)"><span class="switch-slider"></span></label>
+        </div>
+    </div>
+
+    <!-- Tùy chỉnh nền Web cực đẹp -->
+    <div class="setting-box" style="margin-bottom: 0;">
+        <div class="setting-box-title"><i class="fa-solid fa-photo-film"></i> Tùy chỉnh nền Web</div>
+        <div class="bg-custom-control-group">
+            <button class="bg-btn-option bg-btn-reset" onclick="resetToDefaultBackground()">
+                <i class="fa-solid fa-rotate-left"></i> Đặt lại nền
+            </button>
+            <div style="display: flex; gap: 6px; width: 100%;">
+                <button class="bg-btn-option bg-btn-image" style="flex: 1;" onclick="document.getElementById('bgImageInput').click()">
+                    <i class="fa-solid fa-plus"></i> Tệp Ảnh
+                </button>
+                <button class="bg-btn-option bg-btn-video" style="flex: 1;" onclick="document.getElementById('bgVideoInput').click()">
+                    <i class="fa-solid fa-plus"></i> Tệp Video
+                </button>
+            </div>
+        </div>
+        <input type="file" id="bgImageInput" accept="image/*" style="display: none;" onchange="handleCustomBgUpload(event, 'image')">
+        <input type="file" id="bgVideoInput" accept="video/*" style="display: none;" onchange="handleCustomBgUpload(event, 'video')">
+        
+        <!-- Bộ sưu tập lưu trữ hình nền -->
+        <div style="margin-top: 12px; border-top: 1px dashed var(--border-color); padding-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+            <div>
+                <div style="font-size: 10px; color: #ff2ea6; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Gợi ý hình nền
+                </div>
+                <div id="suggestedBgList" style="display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; width: 100%; white-space: nowrap;"></div>
+            </div>
+            
+            <div style="border-top: 1px dashed rgba(255, 255, 255, 0.05); padding-top: 8px;">
+                <div style="font-size: 10px; color: #00bfff; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-folder-open"></i> Nền cá nhân đã lưu
+                </div>
+                <div id="memberBgList" style="display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; width: 100%; white-space: nowrap;"></div>
+            </div>
+        </div>
+        <div id="bgSettingsMsg" style="font-size: 11px; text-align: center; color: #ff2ea6; margin-top: 8px; font-weight: 500;"></div>
+    </div>
+</div>
+
+<!-- ================= TRANG BÁO LỖI TRUY CẬP (thay thế login) ================= -->
+<section id="loginPage" class="auth-wrap hidden">
+    <div class="auth-box" style="text-align:center;">
+        <div style="font-size:48px; margin-bottom:16px;">🚫</div>
+        <div class="auth-title" style="color:#ef4444;">Không có quyền truy cập</div>
+        <div class="auth-sub" style="margin-top:8px;">Bạn cần đăng nhập bằng tài khoản Quản trị viên trên trang chính trước.</div>
+        <a href="index.html" class="auth-btn" style="display:block; margin-top:20px; text-decoration:none; text-align:center;">← Quay về trang chính</a>
+    </div>
+</section>
+
+<!-- ================= GIAO DIỆN BẢNG ĐIỀU KHIỂN CHÍNH (ACP) ================= -->
+<section id="dashPage" class="dash-container hidden">
+    <aside class="sidebar">
+        <div class="sidebar-profile">
+            <div style="position: relative; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 4px;">
+                <div class="avatar-box" id="avatarLetter">A</div>
+                <img src="https://i.ibb.co/PBLcMT2/Pngtree-blue-white-pink-neon-border-9164477-modified-2.png" alt="Khung avatar" class="spinning-avatar-frame" style="position: absolute; width: 62px; height: 62px; pointer-events: none; z-index: 2; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+            </div>
+            <div class="profile-info">
+                <h4 id="name">Admin</h4>
+                <p id="sidebarRole" class="text-rainbow-glow">Quản trị viên</p>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-item active" id="menuAdminDashboard"><a href="#" onclick="switchTab('adminDashboard')"><i class="fa-solid fa-chart-line"></i> <span class="menu-text">Tổng quan ACP</span></a></li>
+            <li class="menu-item" id="menuAdminUsers"><a href="#" onclick="switchTab('adminUsers')"><i class="fa-solid fa-users-gear"></i> <span class="menu-text">Khách hàng</span></a></li>
+            <li class="menu-item" id="menuAdminWithdraw"><a href="#" onclick="switchTab('adminWithdraw')"><i class="fa-solid fa-hand-holding-dollar"></i> <span class="menu-text">Duyệt rút tiền</span></a></li>
+            <li class="menu-item" id="menuAdminTasks"><a href="#" onclick="switchTab('adminTasks')"><i class="fa-solid fa-tasks"></i> <span class="menu-text">Quản lý nhiệm vụ</span></a></li>
+            
+            <li class="menu-item" id="menuAdminLeaderboards"><a href="#" onclick="switchTab('adminLeaderboards')"><i class="fa-solid fa-trophy"></i> <span class="menu-text">Quản lý xếp hạng</span></a></li>
+            <li class="menu-item" id="menuAdminAnnouncements"><a href="#" onclick="switchTab('adminAnnouncements')"><i class="fa-solid fa-bullhorn"></i> <span class="menu-text">Thông báo chung</span></a></li>
+            <li class="menu-item" id="menuAdminBackgrounds"><a href="#" onclick="switchTab('adminBackgrounds')"><i class="fa-solid fa-images"></i> <span class="menu-text">Bộ sưu tập nền</span></a></li>
+            <li class="menu-item" id="menuAdminCheatLogs"><a href="#" onclick="switchTab('adminCheatLogs')"><i class="fa-solid fa-shield-halved"></i> <span class="menu-text">Log gian lận</span></a></li>
+            
+            <li class="menu-item" id="menuAccount"><a href="#" onclick="switchTab('account')"><i class="fa-solid fa-user-shield"></i> <span class="menu-text">Tài khoản</span></a></li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <a href="https://nootask-dev.pages.dev/index.html" class="btn-logout" style="text-decoration: none; color: #00bfff; font-size: 15px; font-weight: 600; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border-radius: 10px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(0,191,255,0.1)'" onmouseout="this.style.background='transparent'"><i class="fa-solid fa-house"></i> <span class="menu-text">Quay lại Trang Chủ</span></a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="successMsg" class="success-msg"></div>
+        
+        <!-- TAB 1: TỔNG QUAN HỆ THỐNG -->
+        <div id="tabAdminDashboardContent">
+            <div class="welcome-header">
+                <h2>Bảng Quản Trị Viên</h2>
+                <p>Xin chào, <span id="nameHeading" style="color: #00bfff; font-weight: bold;">Admin</span>. Chào mừng bạn quay trở lại giao diện điều khiển ACP.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                    <div class="stat-card-content">
+                        <div class="stat-label">Tổng khách hàng</div>
+                        <div class="stat-value" id="statTotalUsers">0 <span>người</span></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-spinner"></i></div>
+                    <div class="stat-card-content">
+                        <div class="stat-label">Yêu cầu rút đang chờ</div>
+                        <div class="stat-value" id="statPendingWithdraws" style="color: #f59e0b;">0 <span>đơn</span></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="stat-card-content">
+                        <div class="stat-label">Nhiệm vụ</div>
+                        <div class="stat-value" id="statTotalTasks">0 <span>Nhiệm vụ</span></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="stat-card-content">
+                        <div class="stat-label">Số tài khoản Blacklist</div>
+                        <div class="stat-value" id="statBannedUsers" style="color: #ef4444;">0 <span>tài khoản</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: QUẢN LÝ THÀNH VIÊN VÀ PHÂN QUYỀN -->
+        <div id="tabAdminUsersContent" class="hidden">
+            <div id="permissionManagementSection" class="config-box cb-pink" style="margin-bottom: 18px; padding: 16px;">
+                <div class="config-box-title" style="font-size: 14px;"><i class="fa-solid fa-user-shield"></i> Cấu hình Phân Quyền Vai Trò & Tính Năng</div>
+
+                <div style="margin-bottom: 12px;">
+                    <label for="selectUserPerm" style="font-size: 12.5px; color: var(--text-muted);">Chọn tài khoản muốn cấu hình:</label>
+                    <select id="selectUserPerm" onchange="loadUserPermissions()" style="width: 100%; padding: 9px 10px; background: var(--bg-input); color: #fff; border: 1px solid var(--border-color); border-radius: 8px; margin-top: 5px; cursor:pointer;"></select>
+                </div>
+
+                <div class="config-box cb-purple" style="margin-bottom: 10px;">
+                    <label for="userRole" class="config-box-title" style="margin-bottom: 6px; font-size: 12.5px;"><i class="fa-solid fa-tags"></i> Vai Trò (Hiển thị tượng trưng)</label>
+                    <input type="text" id="userRole" placeholder="Ví dụ: Đại gia, Hỗ trợ, Kỹ thuật..." style="width: 100%; padding: 9px 10px; background: var(--bg-input); color: #fff; border: 1px solid var(--border-color); border-radius: 8px;">
+                </div>
+
+                <div class="config-box cb-cyan" style="margin-bottom: 10px;">
+                    <div class="config-box-title" style="font-size: 12.5px;"><i class="fa-solid fa-key"></i> Quyền hạn cấp riêng lẻ</div>
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <span>Quyền kiểm duyệt lệnh rút tiền (Phó Admin)</span>
+                            <label class="switch-ui" style="flex-shrink:0;"><input type="checkbox" id="permApproveWithdraw"><span class="switch-slider"></span></label>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <span>Quyền bật/tắt khóa lấy lại mật khẩu từng tài khoản</span>
+                            <label class="switch-ui" style="flex-shrink:0;"><input type="checkbox" id="permLockForgot"><span class="switch-slider"></span></label>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <span>Quyền quản lý & Cập nhật số dư tài khoản người chơi</span>
+                            <label class="switch-ui" style="flex-shrink:0;"><input type="checkbox" id="permManageTasks"><span class="switch-slider"></span></label>
+                        </div>
+                        <div style="border-top: 1px dashed rgba(255, 46, 166, 0.4); padding-top: 10px; margin-top: 2px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <span style="color: #ff2ea6; font-weight: bold;"><i class="fa-solid fa-triangle-exclamation"></i> QUYỀN TRUYỀN NGÔI: Cho phép tự cấp phân quyền</span>
+                            <label class="switch-ui" style="flex-shrink:0;"><input type="checkbox" id="permGrantPermissions"><span class="switch-slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-box cb-red" style="margin-bottom: 12px;">
+                    <div class="config-box-title" style="font-size: 12.5px;"><i class="fa-solid fa-crown"></i> Cấp Quyền Toàn Diện (Super Admin)</div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <span style="font-weight: bold; color: #ff2ea6; font-size: 12.5px;">Kích hoạt Quyền Quản Trị Viên Tối Cao</span>
+                        <label class="switch-ui" style="flex-shrink:0;"><input type="checkbox" id="permSuperAdmin"><span class="switch-slider"></span></label>
+                    </div>
+                </div>
+
+                <button class="btn btn-blue" onclick="saveUserPermissions()" style="width: 100%;"><i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình cấp quyền</button>
+                <div id="permInlineMsg" class="auth-error" style="margin-top: 12px; margin-bottom: 0; text-align: center; display: none;"></div>
+            </div>
+
+            <div class="section-title" style="color:#00bfff;"><i class="fa-solid fa-users-gear"></i> Quản Lý Tài Khoản Khách Hàng</div>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                <button class="btn btn-pink" onclick="triggerAdminUpdateCoin()"><i class="fa-solid fa-coins"></i> Cập Nhật Số Dư Khách</button>
+                <button class="btn btn-purple" onclick="triggerAdminUpdateTotalEarned()"><i class="fa-solid fa-sack-dollar"></i> Cập Nhật Tổng Số Dư Tiền</button>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>Tên tài khoản</th><th>Email đăng ký</th><th>Vai trò</th><th>Số dư hiện tại</th><th>Tổng tiền</th><th>Mật khẩu</th><th style="width: 250px; text-align: center;">Hành động</th></tr></thead>
+                    <tbody id="adminUsersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: DUYỆT RÚT TIỀN DÀNH CHO ADMIN -->
+        <div id="tabAdminWithdrawContent" class="hidden">
+            <div class="section-title" style="color:#ff2ea6; margin-top: 0;"><i class="fa-solid fa-hand-holding-dollar"></i> Danh Sách Duyệt Rút Tiền</div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>Thời gian</th><th>Tài khoản</th><th>Số tiền</th><th>Ngân hàng</th><th>Số TK</th><th>Tên chủ TK</th><th>Trạng thái</th><th style="width: 80px; text-align: center;">Xóa</th></tr></thead>
+                    <tbody id="adminTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 4: QUẢN LÝ NHIỆM VỤ -->
+        <div id="tabAdminTasksContent" class="hidden">
+            <div class="section-title" style="color:#10b981; margin-top: 0;"><i class="fa-solid fa-tasks"></i> Quản Lý Nhiệm Vụ </div>
+            
+            <div class="profile-box" style="max-width: 100%; margin-bottom: 16px; padding: 14px; border-left: 4px solid #10b981;">
+                <h4 style="margin-bottom: 10px; color: #10b981; font-size: 13.5px;"><i class="fa-solid fa-plus"></i> Thêm nhiệm vụ rút gọn mới</h4>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <input id="adminTaskName" class="auth-input-sm" style="flex:1; min-width: 150px; margin-bottom:0;" placeholder="Tên NV">
+                    <input id="adminTaskDesc" class="auth-input-sm" style="flex:2; min-width: 200px; margin-bottom:0;" placeholder="Mô tả nhiệm vụ">
+                    <input id="adminTaskReward" class="auth-input-sm" type="number" style="flex:1; min-width: 100px; margin-bottom:0;" placeholder="Tiền thưởng">
+                    <input id="adminTaskLimit" class="auth-input-sm" type="number" style="flex:1; min-width: 80px; margin-bottom:0;" placeholder="Giới hạn">
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <select id="adminTaskProvider" class="auth-input-sm" style="flex:1; min-width: 130px; margin-bottom:0;" onchange="toggleAddTaskExtraField()">
+                        <option value="uptolink">Uptolink</option>
+                        <option value="layma">Layma</option>
+                    </select>
+                    <input id="adminTaskApiToken" class="auth-input-sm" style="flex:2; min-width: 200px; margin-bottom:0;" placeholder="API Token (của nhiệm vụ này)">
+                    <input id="adminTaskExtra" class="auth-input-sm" style="flex:1; min-width: 150px; margin-bottom:0;" placeholder="Loại QC (1-4)" value="4">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 13px; color: var(--text-main);">Đánh dấu HOT</span>
+                        <label class="switch-ui" style="transform: scale(0.9);"><input type="checkbox" id="adminTaskHot"><span class="switch-slider"></span></label>
+                    </div>
+                    <button class="btn btn-green" style="padding: 8px 15px; font-size: 13px;" onclick="adminAddNewTask()"><i class="fa-solid fa-plus"></i> Thêm mới</button>
+                </div>
+            </div>
+
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>Tên nhiệm vụ</th><th>Mô tả</th><th>Tiền (đ)</th><th>Giới hạn</th><th>Provider / API Token</th><th style="text-align: center;">HOT</th><th style="width: 120px; text-align: center;">Hành động</th></tr></thead>
+                    <tbody id="adminTasksTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- TAB 5: QUẢN LÝ BẢNG XẾP HẠNG -->
+        <div id="tabAdminLeaderboardsContent" class="hidden">
+            <div class="section-title" style="color:#f59e0b; margin-top: 0;"><i class="fa-solid fa-trophy"></i> Quản Lý Bảng Xếp Hạng & Chỉ Số</div>
+            
+            <!-- BẬT TẮT HỆ THỐNG ĐUA TOP VƯỢT LINK -->
+            <div class="setting-box" style="margin-bottom: 14px; border-left: 4px solid #f59e0b; padding: 13px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                    <div style="flex: 1;">
+                        <div class="setting-box-title"><i class="fa-solid fa-toggle-on"></i> Trạng Thái Đua Top Vượt Link</div>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 0; line-height: 1.5;">Khi tắt hệ thống, tuần đó <strong style="color: #ff2ea6;">sẽ KHÔNG có thưởng</strong>. Mở lại khi cần kích hoạt thưởng.</p>
+                    </div>
+                    <label class="switch-ui" style="flex-shrink: 0;">
+                        <input type="checkbox" id="topLinkEnabledSwitch" checked onchange="toggleTopLinkSystem(this.checked)">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div id="topLinkStatusMsg" style="font-size: 11px; color: #22c55e; margin-top: 8px; font-weight: 600; display: none;"></div>
+            </div>
+            
+            <!-- CẤU HÌNH TIỀN THƯỞNG ĐUA TOP -->
+            <div class="profile-box" style="max-width: 100%; margin-bottom: 16px; padding: 16px; border-left: 4px solid #f59e0b;">
+                <h4 style="color: #f59e0b; font-size: 14px; margin-bottom: 12px; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-coins"></i> Cấu Hình Tiền Thưởng Đua Top Vượt Link</h4>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.6;">Số tiền thưởng sẽ được trao vào <strong style="color:#f59e0b;">Chủ nhật hàng tuần</strong> khi hệ thống tự động reset. Admin có thể điều chỉnh giá trị bất kỳ lúc nào.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+                    <div style="flex: 1; min-width: 120px;">
+                        <label style="font-size:12px; color:#eab308; font-weight:bold; display:block; margin-bottom:4px;">🥇 Top 1 (đ)</label>
+                        <input type="number" id="prizeTop1Input" class="auth-input-sm" style="margin:0;" placeholder="VD: 5000">
+                    </div>
+                    <div style="flex: 1; min-width: 120px;">
+                        <label style="font-size:12px; color:#94a3b8; font-weight:bold; display:block; margin-bottom:4px;">🥈 Top 2 (đ)</label>
+                        <input type="number" id="prizeTop2Input" class="auth-input-sm" style="margin:0;" placeholder="VD: 3000">
+                    </div>
+                    <div style="flex: 1; min-width: 120px;">
+                        <label style="font-size:12px; color:#cd7f32; font-weight:bold; display:block; margin-bottom:4px;">🥉 Top 3 (đ)</label>
+                        <input type="number" id="prizeTop3Input" class="auth-input-sm" style="margin:0;" placeholder="VD: 1000">
+                    </div>
+                    <div style="flex: 0; display:flex; align-items:flex-end; padding-bottom:0;">
+                        <button class="btn btn-amber" style="padding: 8px 16px; font-size:13px; white-space:nowrap;" onclick="saveTopLinkPrizes()"><i class="fa-solid fa-floppy-disk"></i> Lưu</button>
+                    </div>
+                </div>
+                <div id="prizeConfigMsg" style="display:none; font-size:13px; color:#22c55e; margin-top:4px;"></div>
+            </div>
+
+            <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-red" onclick="triggerAdminResetTopWithdraw()"><i class="fa-solid fa-rotate-left"></i> Đặt Lại Top Rút Tiền</button>
+                <button class="btn btn-purple" onclick="triggerAdminResetTopLink()"><i class="fa-solid fa-rotate-left"></i> Đặt Lại Top Vượt Link</button>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>Tên tài khoản</th><th>Tổng link đã vượt</th><th>Tổng tiền đã rút</th><th style="width: 190px; text-align: center; white-space: nowrap;">Sửa chỉ số</th></tr></thead>
+                    <tbody id="adminTopLinkBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 6: THÔNG BÁO -->
+        <div id="tabAdminAnnouncementsContent" class="hidden">
+            <div class="section-title" style="color:#f59e0b; margin-top: 0;"><i class="fa-solid fa-bell"></i> Quản Lý Thông Báo </div>
+            <div class="profile-box" style="max-width: 100%; margin-bottom: 16px; padding: 16px; border-left: 4px solid #f59e0b;">
+                <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                    <input id="adminNotiTitleInput" class="auth-input" placeholder="Nhập tiêu đề thông báo..." style="margin-bottom: 0; flex: 2; min-width: 200px;">
+                    <select id="adminNotiColorSelect" class="auth-input" style="margin-bottom: 0; flex: 1; min-width: 120px;">
+                        <option value="#00bfff" style="color: #00bfff; font-weight: bold;">Xanh lam</option>
+                        <option value="#ff2ea6" style="color: #ff2ea6; font-weight: bold;">Hồng Cyber</option>
+                        <option value="#22c55e" style="color: #22c55e; font-weight: bold;">Xanh lá</option>
+                        <option value="#eab308" style="color: #eab308; font-weight: bold;">Vàng</option>
+                        <option value="#ef4444" style="color: #ef4444; font-weight: bold;">Đỏ</option>
+                    </select>
+                </div>
+                <textarea id="adminNotiInput" class="auth-input" placeholder="Nhập nội dung thông báo cho tất cả thành viên..." style="margin-bottom: 10px; height: 100px; resize: vertical; font-family: inherit;"></textarea>
+                <button class="btn btn-blue" style="width: 100%; margin-bottom: 15px;" onclick="sendAdminNoti()"><i class="fa-solid fa-paper-plane"></i> Gửi Thông Báo Mới</button>
+                
+                <div style="font-weight: bold; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; border-top: 1px dashed var(--border-color); padding-top: 10px;">Danh sách thông báo đã gửi:</div>
+                <div id="adminNotiList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+        </div>
+
+        <!-- TAB 7: BỘ SƯU TẬP HÌNH NỀN -->
+        <div id="tabAdminBackgroundsContent" class="hidden">
+            <div class="section-title" style="color:#a855f7; margin-top: 0;"><i class="fa-solid fa-images"></i> Quản Lý Nền </div>
+            <div class="profile-box" style="max-width: 100%; margin-bottom: 16px; padding: 14px; border-left: 4px solid #a855f7;">
+                <h4 style="margin-bottom: 10px; color: #a855f7; font-size: 13.5px;"><i class="fa-solid fa-plus"></i> Đăng tải nền </h4>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+                    <input id="adminBgName" class="auth-input-sm" style="flex:1; min-width: 150px; margin-bottom:0;" placeholder="Tên hình nền">
+                    <select id="adminBgPlatform" class="auth-input-sm" style="flex:1; min-width: 120px; margin-bottom:0;">
+                        <option value="all">Cả hai (PC & Mobile)</option>
+                        <option value="pc">Chỉ dùng cho PC</option>
+                        <option value="mobile">Chỉ dùng cho Mobile</option>
+                    </select>
+                    <select id="adminBgType" class="auth-input-sm" style="flex:1; min-width: 100px; margin-bottom:0;">
+                        <option value="image">Định dạng: Ảnh</option>
+                        <option value="video">Định dạng: Video</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                    <div style="flex: 1; position: relative;">
+                        <button class="bg-btn-option bg-btn-image" style="width: 100%; height: 38px; padding: 0 10px;" onclick="document.getElementById('adminBgFileInput').click()">
+                            <i class="fa-solid fa-file-arrow-up"></i> <span id="adminBgUploadLabel">Chọn tệp Nền</span>
+                        </button>
+                        <input type="file" id="adminBgFileInput" accept="image/*,video/*" style="display: none;" onchange="updateAdminBgUploadLabel(this)">
+                    </div>
+                    <button class="btn btn-purple" style="flex: 1.2; height: 38px; font-size: 13px; padding: 0 15px;" onclick="adminUploadGlobalBg()"><i class="fa-solid fa-cloud-arrow-up"></i> Tải lên thư viện </button>
+                </div>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>Tên hình nền</th><th>Loại tệp</th><th>Nền tảng đích</th><th style="width: 100px; text-align: center;">Hành động</th></tr></thead>
+                    <tbody id="adminBgTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 8: NHẬT KÝ PHÁT HIỆN GIAN LẬN -->
+        <div id="tabAdminCheatLogsContent" class="hidden">
+            <div class="section-title" style="color:#ef4444; margin-top: 0;"><i class="fa-solid fa-triangle-exclamation"></i> Log Hành Vi Bất Thường </div>
+            <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                <button class="btn btn-red" onclick="triggerResetCheatLogs()"><i class="fa-solid fa-trash-can"></i> Xóa Lịch Sử Cảnh Báo</button>
+            </div>
+            <div class="admin-table-wrap" style="border: 1px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.02);">
+                <table class="admin-table">
+                    <thead><tr><th>Thời gian</th><th>Tài khoản</th><th>Nhiệm vụ</th><th>Thời gian hoàn thành</th><th>Địa chỉ IP</th><th>Thiết bị</th></tr></thead>
+                    <tbody id="adminCheatLogBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 9: TÀI KHOẢN ADMIN -->
+        <div id="tabAccountContent" class="hidden">
+            <div class="section-title"><i class="fa-solid fa-user-gear"></i> Thiết lập tài khoản Admin</div>
+            <div class="profile-box">
+                <div style="text-align: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px dashed var(--border-color);">
+                    <div style="position: relative; width: 95px; height: 95px; margin: 0 auto; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                        <div id="accAvatarPreview" style="width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, #00bfff, #ff2ea6); overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: white; transition: all 0.3s ease; border: 3px solid rgba(255, 255, 255, 0.2); box-shadow: 0 0 15px rgba(255, 46, 166, 0.5);" onclick="document.getElementById('avatarUploadInput').click()">A</div>
+                        <img src="https://i.ibb.co/PBLcMT2/Pngtree-blue-white-pink-neon-border-9164477-modified-2.png" alt="Khung avatar" class="spinning-avatar-frame" style="position: absolute; width: 108px; height: 108px; pointer-events: none; z-index: 2; top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: pointer;" onclick="document.getElementById('avatarUploadInput').click()">
+                    </div>
+                    <div style="margin-top: 12px; font-size: 14px; font-weight: 500; color: #00bfff; cursor: pointer;" onclick="document.getElementById('avatarUploadInput').click()"><i class="fa-solid fa-camera"></i> Tải ảnh đại diện lên</div>
+                    <input type="file" id="avatarUploadInput" accept="image/*" style="display: none;" onchange="handleAvatarSelect(event)">
+                </div>
+                <div class="profile-item"><div class="profile-label">Tên tài khoản</div><div class="profile-value" id="profileUser">-</div></div>
+                <div class="profile-item"><div class="profile-label">Email</div><div class="profile-value" id="profileEmail">-</div></div>
+                <div class="profile-item"><div class="profile-label">Vai trò</div><div class="profile-value" id="profileRole">-</div></div>
+                <div class="profile-item"><div class="profile-label">Ngày tham gia</div><div class="profile-value" id="profileJoinDate">-</div></div>
+                <div class="profile-item">
+                    <div class="profile-label" style="display:flex;align-items:center;gap:6px;">
+                        <i class="fa-solid fa-shield-halved" style="color:#f59e0b;"></i> Mật khẩu dự phòng
+                    </div>
+                    <div class="profile-value" style="display:flex;align-items:center;gap:8px;">
+                        <span id="profileBackupPass" style="font-family:monospace;font-size:14px;letter-spacing:1px;color:#f59e0b;background:rgba(245,158,11,0.1);padding:4px 10px;border-radius:6px;border:1px solid rgba(245,158,11,0.25);">••••••••••</span>
+                        <button onclick="adminToggleShowBackupPass()" id="btnToggleAdminBackup" title="Hiện/Ẩn" style="background:transparent;border:none;color:#8492a6;cursor:pointer;font-size:13px;padding:4px;"><i class="fa-solid fa-eye"></i></button>
+                        <button onclick="adminSelfChangeBackupPass()" title="Đổi mật khẩu dự phòng" style="background:transparent;border:none;color:#f59e0b;cursor:pointer;font-size:13px;padding:4px;"><i class="fa-solid fa-pencil"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="password-box">
+                <div style="margin-bottom: 12px; font-weight: 600; font-size: 15px;"><i class="fa-solid fa-lock"></i> Đổi mật khẩu đăng nhập Admin</div>
+                <div id="passwordError" class="auth-error"></div>
+                <div id="passwordSuccess" class="success-msg" style="display:none; padding:10px; margin-bottom:10px; font-size:13px;"></div>
+
+                <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:4px;">Mật khẩu hiện tại</label>
+                <input id="accOldPass" class="auth-input" type="password" style="padding: 10px 15px; margin-bottom: 12px; font-size: 14px;" placeholder="Nhập mật khẩu cũ">
+                <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:4px;">Mật khẩu mới (Tối thiểu 6 ký tự)</label>
+                <input id="accNewPass" class="auth-input" type="password" style="padding: 10px 15px; margin-bottom: 12px; font-size: 14px;" placeholder="Nhập mật khẩu mới">
+                <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:4px;">Xác nhận mật khẩu mới</label>
+                <input id="accConfirmNewPass" class="auth-input" type="password" style="padding: 10px 15px; margin-bottom: 12px; font-size: 14px;" placeholder="Nhập lại mật khẩu mới">
+                <button class="btn btn-pink" style="width: 100%; padding: 10px; font-size: 14px;" onclick="updatePasswordOnly()">Cập nhật mật khẩu</button>
+            </div>
+        </div>
+    </main>
+</section>
+
+<!-- ================= CẮT ẢNH AVATAR MODAL ================= -->
+<div id="avatarCropModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3 style="margin-bottom: 15px; font-size: 18px; color: #fff;">Chỉnh sửa khung hình</h3>
+        <div class="crop-window" id="cropContainer"><img id="cropImage" src="" /></div>
+        <div style="margin-top: 20px; padding: 0 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 5px;">
+                <span><i class="fa-solid fa-magnifying-glass-minus"></i> Thu nhỏ</span>
+                <span>Phóng to <i class="fa-solid fa-magnifying-glass-plus"></i></span>
+            </div>
+            <input type="range" id="cropZoom" min="0.5" max="3" step="0.05" value="1" style="width: 100%; cursor: pointer;" oninput="updateCropTransform()">
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button class="btn" style="flex: 1; background: #334155; color: white;" onclick="closeCropModal()">Hủy</button>
+            <button class="btn btn-blue" style="flex: 1;" onclick="saveAvatar()"><i class="fa-solid fa-floppy-disk"></i> Lưu Ảnh</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= HỆ THỐNG POPUP UNIFIED MODAL ================= -->
+<div id="unifiedModal" class="custom-modal-overlay hidden">
+    <div class="custom-modal-box">
+        <h3 id="uModalTitle" style="margin-bottom: 10px; color: #fff;">Tiêu đề</h3>
+        <p id="uModalDesc" style="margin-bottom: 20px; color: #ccc; font-size: 14px; white-space: pre-line;"></p>
+        <input type="text" id="uModalInput" class="auth-input" style="display:none; margin-bottom: 20px; text-align:center;" autocomplete="off">
+        <div style="display: flex; gap: 10px; justify-content: center;" id="uModalButtons"></div>
+    </div>
+</div>
+
+<!-- NUT HAMBURGER MOBILE -->
+<button id="mobileHamburgerBtn" onclick="toggleMobileMenu()" title="Menu"><i class="fa-solid fa-bars"></i></button>
+<!-- OVERLAY MOBILE MENU -->
+<div id="mobileMenuOverlay" onclick="closeMobileMenu()"></div>
+
+<!-- ================= HỆ THỐNG MODULE FIREBASE CHO ACP ================= -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBsZZ_B_c0pf-NZk0OPL8lI9swTykSBwUY",
+  authDomain: "nootask-42a41.firebaseapp.com",
+  projectId: "nootask-42a41",
+  storageBucket: "nootask-42a41.firebasestorage.app",
+  messagingSenderId: "770207072040",
+  appId: "1:770207072040:web:8a7b3f5acb427fb3861a1d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.db = db;
+window.fsDoc = doc;
+window.fsGetDoc = getDoc;
+window.fsSetDoc = setDoc;
+window.fsUpdateDoc = updateDoc;
+window.fsDeleteDoc = deleteDoc;
+window.fsCollection = collection;
+window.fsGetDocs = getDocs;
+
+console.log("Firebase ACP OK");
+</script>
+
+<script>
+// ================= CONFIGURATION =================
+let currentUser = null;
+let userDevice = "Thiết bị ACP";
+let userIP = "Đang kiểm tra...";
+
+// ================= HỆ THỐNG INDEXEDDB (ĐỒNG BỘ THƯ VIỆN ẢNH NỀN) =================
+const dbName = "NootaskBGDB";
+
+function saveBGToFileSystem(file, type) {
+    let request = indexedDB.open(dbName, 1);
+    request.onupgradeneeded = function(e) {
+        let db = e.target.result;
+        if (!db.objectStoreNames.contains("bgStore")) {
+            db.createObjectStore("bgStore");
+        }
+    };
+    request.onsuccess = function(e) {
+        let db = e.target.result;
+        let tx = db.transaction("bgStore", "readwrite");
+        let store = tx.objectStore("bgStore");
+        
+        const id = "bg_" + Date.now();
+        const bgObject = {
+            id: id,
+            file: file,
+            type: type,
+            name: file.name || (type === "video" ? "Video nền" : "Ảnh nền")
+        };
+        
+        store.put(bgObject, id);
+        store.put(id, "activeBgId");
+        
+        tx.oncomplete = function() {
+            applySavedBackground();
+            const msg = document.getElementById("bgSettingsMsg");
+            if(msg) {
+                msg.innerText = "🎉 Áp dụng hình nền thành công!";
+                setTimeout(() => { msg.innerText = ""; }, 3000);
+            }
+        };
+    };
+}
+
+function renderSavedBackgrounds() {
+    let request = indexedDB.open(dbName, 1);
+    request.onsuccess = function(e) {
+        let db = e.target.result;
+        if (!db.objectStoreNames.contains("bgStore")) return;
+        let tx = db.transaction("bgStore", "readonly");
+        let store = tx.objectStore("bgStore");
+        
+        let suggestedContainer = document.getElementById('suggestedBgList');
+        let memberContainer = document.getElementById('memberBgList');
+        if (!suggestedContainer || !memberContainer) return;
+        
+        suggestedContainer.innerHTML = "";
+        memberContainer.innerHTML = "";
+        
+        let getActive = store.get("activeBgId");
+        getActive.onsuccess = function() {
+            let activeId = getActive.result;
+            let cursorReq = store.openCursor();
+            let suggestedCount = 0;
+            let memberCount = 0;
+            
+            cursorReq.onsuccess = function(event) {
+                let cursor = event.target.result;
+                if (cursor) {
+                    let key = cursor.key;
+                    let value = cursor.value;
+                    
+                    if (key !== "activeBgId" && key !== "customBg" && value && value.id) {
+                        const isGlobalPreset = (typeof key === 'string' && key.startsWith("globalPreset_"));
+                        const isActive = (value.id === activeId);
+                        const activeBorder = isActive ? 'border: 2px solid #ff2ea6; box-shadow: 0 0 8px rgba(255,46,166,0.6);' : 'border: 1px solid var(--border-color);';
+                        
+                        const isMobile = window.innerWidth <= 900;
+                        if (isGlobalPreset && value.platform) {
+                            if (value.platform === "pc" && isMobile) {
+                                cursor.continue();
+                                return;
+                            }
+                            if (value.platform === "mobile" && !isMobile) {
+                                cursor.continue();
+                                return;
+                            }
+                        }
+
+                        let thumbHtml = '';
+                        if (value.type === "image") {
+                            let imgUrl = URL.createObjectURL(value.file);
+                            thumbHtml = `<img src="${imgUrl}" style="width:100%; height:100%; object-fit:cover; border-radius:4px;">`;
+                        } else {
+                            thumbHtml = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1e293b; border-radius:4px; font-size:12px; color:#ff2ea6;"><i class="fa-solid fa-video"></i></div>`;
+                        }
+                        
+                        let bgItem = document.createElement('div');
+                        bgItem.style = `position: relative; width: 50px; height: 50px; border-radius: 6px; cursor: pointer; overflow: hidden; flex-shrink: 0; ${activeBorder}`;
+                        bgItem.title = value.name + (isGlobalPreset ? " (Gợi ý)" : "");
+                        
+                        bgItem.onclick = function(ev) {
+                            if (ev.target.tagName.toLowerCase() === 'i' || ev.target.closest('.del-bg-btn')) return;
+                            applySpecificBg(value.id);
+                        };
+                        
+                        let deleteBtnHtml = '';
+                        if (!isGlobalPreset) {
+                            deleteBtnHtml = `
+                                <button class="del-bg-btn" onclick="deleteSpecificBg('${value.id}', event)" style="position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.85); border: none; color: white; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; z-index: 10;">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            `;
+                        } else {
+                            deleteBtnHtml = `
+                                <div style="position: absolute; bottom: 0; right: 0; background: rgba(0, 191, 255, 0.85); color: white; font-size: 7px; padding: 1px 3px; border-radius: 4px 0 0 0; z-index: 10; font-weight: bold;">
+                                    Ad
+                                </div>
+                            `;
+                        }
+                        
+                        bgItem.innerHTML = thumbHtml + deleteBtnHtml;
+                        
+                        if (isGlobalPreset) {
+                            suggestedContainer.appendChild(bgItem);
+                            suggestedCount++;
+                        } else {
+                            memberContainer.appendChild(bgItem);
+                            memberCount++;
+                        }
+                    }
+                    cursor.continue();
+                } else {
+                    if (suggestedCount === 0) {
+                        suggestedContainer.innerHTML = '<div style="font-size:10px; color:var(--text-muted); font-style:italic; padding: 4px 0;">Chưa có gợi ý</div>';
+                    }
+                    if (memberCount === 0) {
+                        memberContainer.innerHTML = '<div style="font-size:10px; color:var(--text-muted); font-style:italic; padding: 4px 0;">Chưa có nền tự lưu</div>';
+                    }
+                }
+            };
+        };
+    };
+}
+
+function applySpecificBg(id) {
+    let request = indexedDB.open(dbName, 1);
+    request.onsuccess = function(e) {
+        let db = e.target.result;
+        let tx = db.transaction("bgStore", "readwrite");
+        let store = tx.objectStore("bgStore");
+        store.put(id, "activeBgId");
+        tx.oncomplete = function() { applySavedBackground(); };
+    };
+}
+
+function deleteSpecificBg(id, ev) {
+    if(ev) ev.stopPropagation();
+    let request = indexedDB.open(dbName, 1);
+    request.onsuccess = function(e) {
+        let db = e.target.result;
+        let tx = db.transaction("bgStore", "readwrite");
+        let store = tx.objectStore("bgStore");
+        
+        let getActive = store.get("activeBgId");
+        getActive.onsuccess = function() {
+            let activeId = getActive.result;
+            store.delete(id);
+            if (activeId === id) { store.delete("activeBgId"); }
+            tx.oncomplete = function() { applySavedBackground(); };
+        };
+    };
+}
+
+function setBgMedia(data) {
+    const videoEl = document.getElementById("webCustomBgVideo");
+    const imgEl = document.getElementById("webCustomBgImage");
+    if (data && data.file) {
+        let url = URL.createObjectURL(data.file);
+        document.body.classList.add("has-custom-bg");
+        if (data.type === "video") {
+            if (videoEl) { videoEl.src = url; videoEl.style.display = "block"; }
+            if (imgEl) { imgEl.style.display = "none"; imgEl.src = ""; }
+        } else {
+            if (videoEl) { videoEl.style.display = "none"; videoEl.src = ""; }
+            if (imgEl) { imgEl.src = url; imgEl.style.display = "block"; }
+        }
+    } else {
+        clearBackgroundElements();
+    }
+}
+
+function applySavedBackground() {
+    let request = indexedDB.open(dbName, 1);
+    request.onupgradeneeded = function(e) {
+        let db = e.target.result;
+        if (!db.objectStoreNames.contains("bgStore")) { db.createObjectStore("bgStore"); }
+    };
+    request.onsuccess = function(e) {
+        let db = e.target.result;
+        if (!db.objectStoreNames.contains("bgStore")) return;
+        let tx = db.transaction("bgStore", "readonly");
+        let store = tx.objectStore("bgStore");
+        
+        let getActive = store.get("activeBgId");
+        getActive.onsuccess = function() {
+            let activeId = getActive.result;
+            if (activeId) {
+                let getBg = store.get(activeId);
+                getBg.onsuccess = function() {
+                    setBgMedia(getBg.result);
+                    renderSavedBackgrounds();
+                };
+            } else {
+                let getOld = store.get("customBg");
+                getOld.onsuccess = function() {
+                    let data = getOld.result;
+                    if (data && data.file) { setBgMedia(data); } else { clearBackgroundElements(); }
+                    renderSavedBackgrounds();
+                };
+            }
+        };
+    };
+}
+
+function clearBackgroundElements() {
+    document.body.classList.remove("has-custom-bg");
+    const videoEl = document.getElementById("webCustomBgVideo");
+    const imgEl = document.getElementById("webCustomBgImage");
+    if (videoEl) { videoEl.style.display = "none"; videoEl.src = ""; }
+    if (imgEl) { imgEl.style.display = "none"; imgEl.src = ""; }
+}
+
+function resetCustomBg() {
+    let request = indexedDB.open(dbName, 1);
+    request.onsuccess = function(e) {
+        let db = e.target.result;
+        let tx = db.transaction("bgStore", "readwrite");
+        let store = tx.objectStore("bgStore");
+        store.delete("activeBgId");
+        tx.oncomplete = function() {
+            clearBackgroundElements();
+            renderSavedBackgrounds();
+            const msg = document.getElementById("bgSettingsMsg");
+            if(msg) {
+                msg.innerText = "↩️ Khôi phục nền gốc!";
+                setTimeout(() => { msg.innerText = ""; }, 3000);
+            }
+        };
+    };
+}
+
+function toggleSettingsPanel() {
+    const panel = document.getElementById('settingsPanel');
+    if (panel) { panel.classList.toggle('hidden'); }
+}
+
+function handleCustomBgUpload(event, type) {
+    const file = event.target.files[0];
+    if (!file) return;
+    saveBGToFileSystem(file, type);
+}
+
+function resetToDefaultBackground() { resetCustomBg(); }
+
+function updateAdminBgUploadLabel(input) {
+    const label = document.getElementById("adminBgUploadLabel");
+    if (label && input.files && input.files[0]) {
+        label.innerText = "📁 Tệp: " + input.files[0].name;
+        label.style.color = "#a855f7";
+    }
+}
+
+function toggleGlassOpacity(checked) {
+    const body = document.body;
+    const sw = document.getElementById('glassOpacitySwitch');
+    if (checked) {
+        body.classList.add('opaque-cards');
+        localStorage.setItem("opaqueCards", "true");
+        if(sw) sw.checked = true;
+    } else {
+        body.classList.remove('opaque-cards');
+        localStorage.setItem("opaqueCards", "false");
+        if(sw) sw.checked = false;
+    }
+}
+
+// ================= HỆ THỐNG UNIFIED MODAL =================
+let uModalCallback = null;
+function showUModal(type, title, desc, callback = null, defaultInputValue = "") {
+    document.getElementById('uModalTitle').innerText = title;
+    document.getElementById('uModalDesc').innerText = desc;
+    const inputEl = document.getElementById('uModalInput');
+    const btnsEl = document.getElementById('uModalButtons');
+    document.getElementById('unifiedModal').classList.remove('hidden');
+    uModalCallback = callback;
+    
+    if (type === 'alert') {
+        inputEl.style.display = 'none';
+        btnsEl.innerHTML = `<button onclick="closeUModal()" class="btn btn-blue" style="width:100%;">Đóng</button>`;
+    } else if (type === 'confirm') {
+        inputEl.style.display = 'none';
+        btnsEl.innerHTML = `
+            <button onclick="closeUModal()" style="flex:1; padding: 12px; border-radius: 8px; border: none; background: #475569; color: #fff; cursor: pointer;">Hủy</button>
+            <button onclick="confirmUModal()" style="flex:1; padding: 12px; border-radius: 8px; border: none; background: linear-gradient(45deg, #00bfff, #ff2ea6); color: #fff; cursor: pointer; font-weight: bold;">Đồng ý</button>
+        `;
+    } else if (type === 'prompt' || type === 'password') {
+        inputEl.style.display = 'block';
+        inputEl.type = type === 'password' ? 'password' : 'text';
+        inputEl.value = defaultInputValue;
+        btnsEl.innerHTML = `
+            <button onclick="closeUModal()" style="flex:1; padding: 12px; border-radius: 8px; border: none; background: #475569; color: #fff; cursor: pointer;">Hủy</button>
+            <button onclick="promptUModal()" style="flex:1; padding: 12px; border-radius: 8px; border: none; background: linear-gradient(45deg, #22c55e, #15803d); color: #fff; cursor: pointer; font-weight: bold;">Xác nhận</button>
+        `;
+        setTimeout(() => inputEl.focus(), 100);
+    }
+}
+function closeUModal() { document.getElementById('unifiedModal').classList.add('hidden'); uModalCallback = null; }
+function confirmUModal() { 
+    const callback = uModalCallback;
+    closeUModal(); 
+    if(callback) callback(true); 
+}
+function promptUModal() { 
+    const val = document.getElementById('uModalInput').value; 
+    const callback = uModalCallback;
+    closeUModal(); 
+    if(callback) callback(val); 
+}
+
+function showError(divId, msg) { const div = document.getElementById(divId); if(div) { div.innerText = msg; div.style.display = 'block'; } }
+function showSuccess(msg) { const s = document.getElementById('successMsg'); if(s) { s.innerText = msg; s.style.display = 'block'; setTimeout(() => { s.style.display = 'none'; }, 3000); } }
+
+function showInlineAlert(elementId, msg, type = 'error') {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.innerHTML = msg;
+    el.style.display = 'block';
+    if (type === 'error') {
+        el.style.background = 'rgba(239, 68, 68, 0.1)';
+        el.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        el.style.color = '#ef4444'; 
+    } else {
+        el.style.background = 'rgba(34, 197, 94, 0.15)';
+        el.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+        el.style.color = '#22c55e'; 
+    }
+    setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+
+// ================= KIỂM TRA QUYỀN HẠN CỦA TÀI KHOẢN TRUY CẬP ACP (DYNAMIC) =================
+function isUserMasterAdmin(uname) {
+    if(!uname) return false;
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const u = users[uname];
+    
+    // Kiểm tra bảo mật theo Email để chặn việc giả mạo Admin (Mã hóa email: nguyenanhdung11072010@gmail.com)
+    if (u && u.email) {
+        const obs = btoa(u.email.toLowerCase().split('').reverse().join(''));
+        if (obs === "bW9jLmxpYW1nQDAxMDI3MDExZ251ZGhueWVuZ24=") {
+            return true;
+        }
+    }
+    // Tài khoản có cờ isSuperAdmin = true cũng là Tối cao (được cấp bởi chủ ACP)
+    if (u && u.isSuperAdmin === true) {
+        return true;
+    }
+    return false;
+}
+
+function hasAnyAdminAccess(uname) {
+    if(!uname) return false;
+    if(isUserMasterAdmin(uname)) return true;
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const u = users[uname];
+    if(u && u.permissions) {
+        return Object.values(u.permissions).some(v => v === true);
+    }
+    return false;
+}
+
+function formatMoney(amount) { return Number(amount || 0).toLocaleString('vi-VN'); }
+
+// ================= MẬT KHẨU DỰ PHÒNG =================
+function generateBackupPassword() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    let result = "";
+    for (let i = 0; i < 10; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+    return result;
+}
+
+// Admin đặt MK dự phòng tùy ý cho BẤT KỲ user nào (kể cả admin)
+function adminChangeUserBackupPass(username) {
+    const adminActive = localStorage.getItem("currentUser");
+    if (!isUserMasterAdmin(adminActive)) { showUModal('alert', 'Lỗi', 'Chỉ Quản trị viên tối cao mới được đổi mật khẩu dự phòng!'); return; }
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    if (!users[username]) return;
+    const current = users[username].backupPass || '(chưa có)';
+    showUModal('prompt', `🔑 Đổi MK dự phòng — ${username}`,
+        `MK dự phòng hiện tại: ${current}\n\nNhập mật khẩu dự phòng MỚI tùy ý.\n(Để trống → tự động tạo ngẫu nhiên)`,
+        function(val) {
+            if (val === null) return;
+            const newPass = (val && val.trim()) ? val.trim() : generateBackupPassword();
+            users[username].backupPass = newPass;
+            localStorage.setItem("users", JSON.stringify(users));
+            syncUserToFirestore(username);
+            showSuccess(`✅ Đã đặt MK dự phòng cho [${username}]: ${newPass}`);
+            loadData();
+        }, "");
+}
+
+// Admin tự đổi MK dự phòng của chính mình (tùy ý, không giới hạn ký tự)
+function adminSelfChangeBackupPass() {
+    if (!isUserMasterAdmin(currentUser)) { showUModal('alert', 'Lỗi', 'Chỉ Quản trị viên tối cao mới được đổi!'); return; }
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const user = users[currentUser];
+    if (!user) return;
+    const current = user.backupPass || '(chưa có)';
+    showUModal('prompt', '🔑 Đổi Mật Khẩu Dự Phòng Admin',
+        `MK dự phòng hiện tại: ${current}\n\nNhập mật khẩu dự phòng mới TUỲ Ý (chữ, số, ký tự đặc biệt đều được).\n(Để trống → tự động tạo ngẫu nhiên)`,
+        function(val) {
+            if (val === null) return;
+            const newPass = (val && val.trim()) ? val.trim() : generateBackupPassword();
+            user.backupPass = newPass;
+            users[currentUser] = user;
+            localStorage.setItem("users", JSON.stringify(users));
+            syncUserToFirestore(currentUser);
+            showSuccess(`✅ MK dự phòng mới của bạn: ${newPass}`);
+            // Cập nhật UI nếu đang ở tab account
+            const el = document.getElementById('profileBackupPass');
+            if (el) el.textContent = newPass;
+        }, "");
+}
+
+function adminToggleShowBackupPass() {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const user = users[currentUser];
+    if (!user) return;
+    const el = document.getElementById('profileBackupPass');
+    const btn = document.getElementById('btnToggleAdminBackup');
+    if (!el) return;
+    window._adminBpVisible = !window._adminBpVisible;
+    if (window._adminBpVisible) {
+        el.textContent = user.backupPass || '(chưa có)';
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+    } else {
+        el.textContent = '••••••••••';
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+    }
+}
+
+
+// ================= KHỞI TẠO VÀ CHUYỂN TAB TRANG QUẢN TRỊ =================
+function switchTab(tabId) {
+    if(window.innerWidth <= 900) { closeMobileMenu(); }
+    const tabs = ['adminDashboard', 'adminUsers', 'adminWithdraw', 'adminTasks', 'adminLeaderboards', 'adminAnnouncements', 'adminBackgrounds', 'adminCheatLogs', 'account'];
+    tabs.forEach(t => {
+        const content = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Content`);
+        const menu = document.getElementById(`menu${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if(content) content.classList.add('hidden');
+        if(menu) menu.classList.remove('active');
+    });
+
+    const activeContent = document.getElementById(`tab${tabId.charAt(0).toUpperCase() + tabId.slice(1)}Content`);
+    const activeMenu = document.getElementById(`menu${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`);
+    if(activeContent) activeContent.classList.remove('hidden');
+    if(activeMenu) activeMenu.classList.add('active');
+
+    if(tabId === 'adminLeaderboards') {
+        loadTopLinkPrizes();
+    }
+
+    if(tabId === 'account') {
+        const users = JSON.parse(localStorage.getItem("users") || "{}");
+        const user = users[currentUser];
+        if(user) {
+            document.getElementById('profileUser').textContent = currentUser;
+            document.getElementById('profileEmail').textContent = user.email || "-";
+            document.getElementById('profileRole').innerHTML = '<span class="role-badge role-admin">Quản trị viên</span>';
+            document.getElementById('profileJoinDate').textContent = user.joinDate || "Hệ thống";
+            // Ẩn backup pass mặc định
+            const bpEl = document.getElementById('profileBackupPass');
+            if (bpEl) bpEl.textContent = "••••••••••";
+            const btnEl = document.getElementById('btnToggleAdminBackup');
+            if (btnEl) btnEl.innerHTML = '<i class="fa-solid fa-eye"></i>';
+            window._adminBpVisible = false;
+        }
+    }
+    loadData();
+}
+
+// ================= XỬ LÝ ĐĂNG NHẬP ADMIN =================
+function showDash() {
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('dashPage').classList.remove('hidden');
+    document.getElementById('settingsTriggerBtn').classList.remove('hidden');
+    switchTab('adminDashboard');
+}
+
+// ================= TẢI DỮ LIỆU ĐỒNG BỘ VỚI DB CHÍNH =================
+function loadData() {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const requests = JSON.parse(localStorage.getItem("withdrawRequests") || "[]");
+    const tasks = JSON.parse(localStorage.getItem("systemTasks") || "[]");
+    
+    // Restore top link system state
+    const topLinkEnabled = localStorage.getItem("topLinkEnabled");
+    const topLinkSwitch = document.getElementById('topLinkEnabledSwitch');
+    if (topLinkSwitch) {
+        topLinkSwitch.checked = topLinkEnabled !== "false";
+    }
+    
+    // Luôn đảm bảo tài khoản Quản trị tối cao có toàn bộ quyền
+    for (let uname in users) {
+        if (isUserMasterAdmin(uname)) {
+            users[uname].isSuperAdmin = true;
+            users[uname].permissions = {
+                approveWithdraw: true,
+                lockForgotToggle: true,
+                manageTasks: true,
+                grantPermissions: true
+            };
+        }
+    }
+
+    const totalUsers = Object.keys(users).length;
+    const pendingRequestsCount = requests.filter(r => r.status === "Đang chờ").length;
+    const totalTasksCount = tasks.length;
+    const bannedUsersCount = Object.values(users).filter(u => u.isBanned).length;
+
+    document.getElementById('statTotalUsers').innerHTML = `${totalUsers} <span>người</span>`;
+    document.getElementById('statPendingWithdraws').innerHTML = `${pendingRequestsCount} <span>đơn</span>`;
+    document.getElementById('statTotalTasks').innerHTML = `${totalTasksCount} <span>nhiệm vụ</span>`;
+    document.getElementById('statBannedUsers').innerHTML = `${bannedUsersCount} <span>tài khoản</span>`;
+
+    const user = users[currentUser];
+    if(user) {
+        updateAvatarUI(user.avatar);
+        document.getElementById('name').textContent = currentUser;
+        document.getElementById('nameHeading').textContent = currentUser;
+        
+        const roleEl = document.getElementById('sidebarRole');
+        if(roleEl) {
+            roleEl.className = "text-rainbow-glow";
+            roleEl.textContent = isUserMasterAdmin(currentUser) ? "Quản trị viên" : (user.role || "Quản trị viên");
+        }
+    }
+
+    renderAdminUsers();
+    renderAdminRequests();
+    renderAdminTopLink();
+    renderAdminTasks();
+    renderAdminBgList();
+    renderCheatLogs();
+    renderAdminNotiList();
+    updateSelectUserPermDropdown();
+}
+
+function updateAvatarUI(b64Data) {
+    const avatarBox = document.getElementById('avatarLetter');
+    const accAvatarPreview = document.getElementById('accAvatarPreview');
+    if(b64Data) {
+        const imgHtml = `<img src="${b64Data}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        if(avatarBox) avatarBox.innerHTML = imgHtml;
+        if(accAvatarPreview) accAvatarPreview.innerHTML = imgHtml;
+    } else {
+        const letter = currentUser ? currentUser.charAt(0).toUpperCase() : "A";
+        if(avatarBox) avatarBox.innerHTML = letter;
+        if(accAvatarPreview) accAvatarPreview.innerHTML = letter;
+    }
+}
+
+// ================= PHÂN QUYỀN THÀNH VIÊN =================
+function updateSelectUserPermDropdown() {
+    const select = document.getElementById('selectUserPerm');
+    if (!select) return;
+    const val = select.value;
+    select.innerHTML = '<option value="">-- Chọn tài khoản khách --</option>';
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    
+    const selfUser = localStorage.getItem("currentUser");
+    for (let username in users) {
+        if(username === selfUser) continue;
+        let option = document.createElement('option');
+        option.value = username;
+        option.innerText = username + ` (${users[username].role || 'Thành viên'})`;
+        select.appendChild(option);
+    }
+    if (val && users[val]) { select.value = val; }
+}
+
+function loadUserPermissions() {
+    const username = document.getElementById('selectUserPerm').value;
+    if (!username) {
+        document.getElementById('userRole').value = "";
+        document.getElementById('permSuperAdmin').checked = false;
+        document.getElementById('permApproveWithdraw').checked = false;
+        document.getElementById('permLockForgot').checked = false;
+        document.getElementById('permManageTasks').checked = false;
+        document.getElementById('permGrantPermissions').checked = false;
+        return;
+    }
+    
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const userTarget = users[username];
+    
+    if (userTarget) {
+        document.getElementById('userRole').value = userTarget.role || "Thành viên";
+        document.getElementById('permSuperAdmin').checked = userTarget.isSuperAdmin || false;
+        const perms = userTarget.permissions || {};
+        document.getElementById('permApproveWithdraw').checked = perms.approveWithdraw || false;
+        document.getElementById('permLockForgot').checked = perms.lockForgotToggle || false;
+        document.getElementById('permManageTasks').checked = perms.manageTasks || false;
+        document.getElementById('permGrantPermissions').checked = perms.grantPermissions || false;
+    }
+}
+
+function saveUserPermissions() {
+    const adminActive = localStorage.getItem("currentUser");
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasGrantPerm = users[adminActive] && users[adminActive].permissions && users[adminActive].permissions.grantPermissions;
+    
+    if (!isMaster && !hasGrantPerm) {
+        showInlineAlert('permInlineMsg', "❌ Bạn không có quyền Phân quyền!", 'error');
+        return;
+    }
+
+    const targetUser = document.getElementById('selectUserPerm').value;
+    if (!targetUser) { showInlineAlert('permInlineMsg', "⚠️ Vui lòng chọn một tài khoản!", 'error'); return; }
+
+    users[targetUser].role = document.getElementById('userRole').value.trim() || "Thành viên";
+    users[targetUser].isSuperAdmin = document.getElementById('permSuperAdmin').checked;
+    users[targetUser].permissions = {
+        approveWithdraw: document.getElementById('permApproveWithdraw').checked,
+        lockForgotToggle: document.getElementById('permLockForgot').checked,
+        manageTasks: document.getElementById('permManageTasks').checked,
+        grantPermissions: document.getElementById('permGrantPermissions').checked
+    };
+
+    showInlineAlert('permInlineMsg', `🎉 Cập nhật thành công cho ${targetUser}!`, 'success');
+    saveUsersAndSync(users, [targetUser]);
+    loadData();
+}
+
+// ================= QUẢN LÝ QUỸ & TÀI KHOẢN KHÁCH =================
+function renderAdminUsers() {
+    const tbody = document.getElementById('adminUsersTableBody'); if(!tbody) return;
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const selfUser = localStorage.getItem("currentUser");
+    // Hiển thị tất cả tài khoản trừ chính tài khoản đang đăng nhập
+    const userKeys = Object.keys(users).filter(k => k !== selfUser);
+    
+    if(userKeys.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">Không có khách hàng nào.</td></tr>'; return; }
+    
+    let html = "";
+    userKeys.forEach(k => {
+        let uData = users[k];
+        let totalMoneyEarned = uData.totalEarned !== undefined ? uData.totalEarned : (uData.coin || 0);
+        
+        let lockBtn = `<button class="btn ${uData.lockForgot ? 'btn-green' : 'btn-amber'}" style="padding:6px 10px; font-size:12px; border-radius:6px;" onclick="adminToggleLockForgot('${k}')" title="${uData.lockForgot ? 'Mở khóa chức năng quên MK' : 'Khóa chức năng quên MK'}"><i class="fa-solid ${uData.lockForgot ? 'fa-unlock' : 'fa-lock'}"></i></button>`;
+        let editRoleBtn = `<button class="btn btn-blue" style="padding:6px 10px; font-size:12px; border-radius:6px;" onclick="triggerAdminUpdateRole('${k}')" title="Sửa vai trò nhanh"><i class="fa-solid fa-pen"></i></button>`;
+        let backupPassBtn = isUserMasterAdmin(localStorage.getItem("currentUser")) ? `<button class="btn" style="padding:6px 10px; font-size:12px; border-radius:6px; background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="adminChangeUserBackupPass('${k}')" title="Đổi MK dự phòng"><i class="fa-solid fa-key"></i></button>` : '';
+        let deleteBtn = `<button class="btn btn-red" style="padding:6px 10px; font-size:12px; border-radius:6px;" onclick="triggerAdminDeleteUser('${k}')" title="Xóa tài khoản"><i class="fa-solid fa-trash"></i></button>`;
+        let banBtn = `<button class="btn ${uData.isBanned ? 'btn-green' : 'btn-red'}" style="padding:6px 10px; font-size:12px; border-radius:6px; background: ${uData.isBanned ? 'linear-gradient(135deg,#22c55e,#15803d)' : 'linear-gradient(135deg,#7f0000,#b00000)'};" onclick="adminToggleBan('${k}')" title="${uData.isBanned ? 'Bỏ cấm' : 'Cấm tài khoản'}"><i class="fa-solid fa-ban"></i></button>`;
+        let ipBtn = `<button class="btn btn-purple" style="padding:6px 10px; font-size:12px; border-radius:6px;" onclick="adminCheckUserIPs('${k}')" title="Kiểm tra IP đã dùng"><i class="fa-solid fa-network-wired"></i></button>`;
+
+        const isMasterAdmin_cur = isUserMasterAdmin(localStorage.getItem("currentUser"));
+        html += `<tr>
+            <td><strong>${k}</strong></td>
+            <td>${uData.email || '-'}</td>
+            <td style="color:#a855f7; font-weight:bold;">${uData.role || 'Thành viên'} ${uData.isSuperAdmin ? '<span style="color:#ef4444; font-size:11px; font-weight:bold;">[Tối cao]</span>' : ''}</td>
+            <td style="color:#22c55e; font-weight:bold;">${formatMoney(uData.coin)} đ</td>
+            <td style="color:#00bfff; font-weight:bold;">${formatMoney(totalMoneyEarned)} đ</td>
+            <td><small style="opacity:0.6;">${uData.pass ? atob(uData.pass) : '-'}</small></td>
+            <td style="white-space: nowrap;"><div style="display: flex; gap: 5px; justify-content: center; align-items: center;">${editRoleBtn} ${lockBtn} ${ipBtn} ${backupPassBtn} ${banBtn} ${deleteBtn}</div></td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+function adminCheckUserIPs(username) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const user = users[username];
+    if(!user) return;
+    const ips = user.completedIPs || [];
+    if(ips.length === 0) {
+        showUModal('alert', `IP của ${username}`, `Chưa thực hiện vượt link.`);
+    } else {
+        showUModal('alert', `IP của ${username}`, `IP đã ghi nhận:\n\n` + ips.map((ip, idx) => `${idx + 1}. IP: ${ip}`).join('\n'));
+    }
+}
+
+function adminToggleLockForgot(username) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.lockForgotToggle;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không có quyền khóa/mở chức năng quên MK!"); return; }
+
+    if(users[username]) {
+        users[username].lockForgot = !users[username].lockForgot;
+        saveUsersAndSync(users, [username]);
+        loadData();
+    }
+}
+
+function adminToggleBan(username) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.grantPermissions;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không có quyền cấm tài khoản!"); return; }
+
+    if(!users[username]) return;
+    const isCurrentlyBanned = users[username].isBanned;
+    showUModal('confirm', isCurrentlyBanned ? 'Mở Khóa Tài Khoản' : '⚠️ Khóa Tài Khoản', `Chắc chắn muốn thay đổi trạng thái Blacklist tài khoản "${username}"?`, function(agreed) {
+        if(agreed) {
+            users[username].isBanned = !isCurrentlyBanned;
+            saveUsersAndSync(users, [username]);
+            showSuccess(isCurrentlyBanned ? `Đã gỡ cấm ${username}!` : `Đã đưa ${username} vào Blacklist!`);
+            loadData();
+        }
+    });
+}
+
+function triggerAdminUpdateRole(username) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const currentRole = users[username]?.role || "Thành viên";
+    showUModal('prompt', 'Đổi Vai Trò', `Nhập vai trò hiển thị nhanh cho ${username}:`, function(newRole) {
+        if (newRole !== null && newRole.trim() !== "") {
+            adminUpdateRole(username, newRole.trim());
+        }
+    }, currentRole);
+}
+
+function adminUpdateRole(username, newRole) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.grantPermissions; 
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không có quyền đổi vai trò!"); return; }
+
+    if(users[username]) {
+        users[username].role = newRole;
+        saveUsersAndSync(users, [username]);
+        showSuccess(`Cập nhật vai trò cho ${username} thành công!`);
+        loadData();
+    }
+}
+
+function triggerAdminDeleteUser(username) {
+    showUModal('confirm', 'Xác nhận xóa', `Bạn có chắc chắn muốn xóa tài khoản "${username}" khỏi wed?`, function(agreed) {
+        if(agreed) {
+            adminDeleteUser(username);
+        }
+    });
+}
+
+function adminDeleteUser(username) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.grantPermissions;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không đủ thẩm quyền xóa tài khoản!"); return; }
+
+    if(users[username]) {
+        delete users[username];
+        localStorage.setItem("users", JSON.stringify(users));
+        deleteUserFromFirestore(username);
+        let requests = JSON.parse(localStorage.getItem("withdrawRequests") || "[]");
+        requests = requests.filter(r => r.username !== username);
+        localStorage.setItem("withdrawRequests", JSON.stringify(requests));
+        showSuccess(`Đã xóa sạch tài khoản ${username}!`);
+        loadData();
+    }
+}
+
+// ================= KIỂM DUYỆT RÚT TIỀN =================
+function renderAdminRequests() {
+    const tbody = document.getElementById('adminTableBody'); if(!tbody) return;
+    const requests = JSON.parse(localStorage.getItem("withdrawRequests") || "[]");
+    const visibleReqs = requests.filter(r => !r.adminDeleted);
+    
+    if(visibleReqs.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Không có giao dịch rút nào cần xử lý.</td></tr>'; return; }
+    
+    let html = "";
+    [...visibleReqs].reverse().forEach(req => {
+        let actionHtml = req.status === "Đang chờ" ? `<button class="btn btn-green" style="padding:6px 12px; font-size:12px; border-radius:6px;" onclick="triggerApproveWithdraw(${req.id})"><i class="fa-solid fa-check"></i> Duyệt</button>` : `<span style="color:#22c55e; font-weight:600;"><i class="fa-solid fa-circle-check"></i> Đã Duyệt</span>`;
+        let deleteBtn = req.status !== "Đang chờ" ? `<i class="fa-solid fa-trash" style="color:#ef4444; font-size:16px; cursor:pointer;" onclick="adminDeleteRequest(${req.id})" title="Xóa lịch sử"></i>` : "";
+        html += `<tr><td>${req.time}</td><td><strong>${req.username}</strong></td><td style="color:#ff2ea6; font-weight:bold;">${formatMoney(req.amount)} đ</td><td>${req.bank}</td><td><code>${req.num}</code></td><td>${req.name}</td><td>${actionHtml}</td><td style="text-align: center;">${deleteBtn}</td></tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+function triggerApproveWithdraw(id) {
+    showUModal('confirm', 'Duyệt Thanh Toán', 'Xác nhận bạn đã chuyển tiền thành công cho tài khoản nhận này?', function(agreed) {
+        if(agreed) approveWithdraw(id);
+    });
+}
+
+function approveWithdraw(id) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.approveWithdraw;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Bạn không có quyền phê duyệt tiền!"); return; }
+
+    const requests = JSON.parse(localStorage.getItem("withdrawRequests") || "[]"); 
+    const targetIdx = requests.findIndex(r => r.id === id);
+    if(targetIdx !== -1) {
+        requests[targetIdx].status = "Thành công";
+        const uname = requests[targetIdx].username;
+        if(users[uname]) {
+            users[uname].totalWithdrawn = (users[uname].totalWithdrawn || 0) + requests[targetIdx].amount;
+            saveUsersAndSync(users, [uname]);
+        }
+        localStorage.setItem("withdrawRequests", JSON.stringify(requests));
+        showSuccess("🎉 Duyệt rút tiền thành công!");
+        loadData();
+    }
+}
+
+function adminDeleteRequest(id) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.approveWithdraw;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không có quyền xóa lịch sử!"); return; }
+
+    let requests = JSON.parse(localStorage.getItem("withdrawRequests") || "[]"); 
+    const req = requests.find(r => r.id === id);
+    if (req) {
+        req.adminDeleted = true; 
+        localStorage.setItem("withdrawRequests", JSON.stringify(requests)); 
+        loadData();
+    }
+}
+
+// ================= QUẢN LÝ NHIỆM VỤ RÚT GỌN =================
+function renderAdminTasks() {
+    const tbody = document.getElementById('adminTasksTableBody'); if(!tbody) return;
+    const tasks = JSON.parse(localStorage.getItem("systemTasks") || "[]");
+    if(tasks.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Hệ thống chưa tạo nhiệm vụ nào.</td></tr>'; return; }
+    
+    let html = '';
+    tasks.forEach(t => {
+        const provider = t.provider || 'uptolink';
+        const isLayma = provider === 'layma';
+        const extraVal = isLayma ? (t.link_du_phong || '') : (t.type || 4);
+        const extraPlaceholder = isLayma ? 'Link dự phòng' : 'Loại QC (1-4)';
+        html += `
+        <tr>
+            <td><input type="text" id="eTaskName_${t.id}" value="${t.name}" class="auth-input-sm" style="margin:0; min-width: 120px;"></td>
+            <td><input type="text" id="eTaskDesc_${t.id}" value="${t.desc || ''}" class="auth-input-sm" style="margin:0; min-width: 180px;"></td>
+            <td><input type="number" id="eTaskReward_${t.id}" value="${t.reward}" class="auth-input-sm" style="margin:0; width: 90px;"></td>
+            <td><input type="number" id="eTaskLimit_${t.id}" value="${t.limit || 1000}" class="auth-input-sm" style="margin:0; width: 80px;"></td>
+            <td style="min-width: 190px;">
+                <select id="eTaskProvider_${t.id}" class="auth-input-sm" style="margin:0 0 6px 0; width:100%;" onchange="toggleEditTaskExtraField('${t.id}')">
+                    <option value="uptolink" ${!isLayma ? 'selected' : ''}>Uptolink</option>
+                    <option value="layma" ${isLayma ? 'selected' : ''}>Layma</option>
+                </select>
+                <input type="text" id="eTaskApiToken_${t.id}" value="${t.apiToken || ''}" class="auth-input-sm" style="margin:0 0 6px 0; width:100%;" placeholder="API Token">
+                <input type="text" id="eTaskExtra_${t.id}" value="${extraVal}" class="auth-input-sm" style="margin:0; width:100%;" placeholder="${extraPlaceholder}">
+            </td>
+            <td style="text-align:center;">
+                <label class="switch-ui" style="transform: scale(0.85); display: inline-block;">
+                    <input type="checkbox" id="eTaskHot_${t.id}" ${t.isHot ? 'checked' : ''}>
+                    <span class="switch-slider"></span>
+                </label>
+            </td>
+            <td style="text-align:center;">
+                <div class="action-btns">
+                    <button class="btn btn-blue" style="padding:6px 10px; font-size:12px; border-radius:6px;" onclick="adminSaveTask('${t.id}')"><i class="fa-solid fa-floppy-disk"></i></button>
+                    <button class="btn btn-red" style="padding:6px 10px; font-size:12px; border-radius:6px;" onclick="triggerAdminDelTask('${t.id}')"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+// Đổi nhãn/giá trị mặc định cho ô "tham số thêm" khi đổi provider trong DÒNG SỬA (Uptolink dùng "Loại QC", Layma dùng "Link dự phòng")
+function toggleEditTaskExtraField(taskId) {
+    const sel = document.getElementById(`eTaskProvider_${taskId}`);
+    const extra = document.getElementById(`eTaskExtra_${taskId}`);
+    if(!sel || !extra) return;
+    if(sel.value === 'layma') {
+        extra.placeholder = 'Link dự phòng';
+        extra.value = '';
+    } else {
+        extra.placeholder = 'Loại QC (1-4)';
+        extra.value = '4';
+    }
+}
+
+// Đổi nhãn/giá trị mặc định cho ô "tham số thêm" khi đổi provider trong FORM THÊM MỚI
+function toggleAddTaskExtraField() {
+    const sel = document.getElementById('adminTaskProvider');
+    const extra = document.getElementById('adminTaskExtra');
+    if(!sel || !extra) return;
+    if(sel.value === 'layma') {
+        extra.placeholder = 'Link dự phòng (không bắt buộc)';
+        extra.value = '';
+    } else {
+        extra.placeholder = 'Loại QC (1-4)';
+        extra.value = '4';
+    }
+}
+
+function adminAddNewTask() {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.manageTasks;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không có quyền quản lý nhiệm vụ!"); return; }
+
+    const name = document.getElementById('adminTaskName').value.trim();
+    const desc = document.getElementById('adminTaskDesc').value.trim();
+    const reward = parseInt(document.getElementById('adminTaskReward').value);
+    const limit = parseInt(document.getElementById('adminTaskLimit').value) || 1000;
+    const provider = document.getElementById('adminTaskProvider').value;
+    const apiToken = document.getElementById('adminTaskApiToken').value.trim();
+    const extraVal = document.getElementById('adminTaskExtra').value.trim();
+    const isHot = document.getElementById('adminTaskHot').checked;
+
+    if(!name || !reward || !apiToken) { showUModal('alert', 'Lỗi', "Điền đầy đủ thông tin bắt buộc (Tên NV, Tiền thưởng, API Token)!"); return; }
+
+    const tasks = JSON.parse(localStorage.getItem("systemTasks") || "[]");
+    const newTask = {
+        id: 'task_' + Date.now(),
+        name: name,
+        desc: desc || 'Hoàn thành nhiệm vụ để nhận thưởng.',
+        reward: reward,
+        limit: limit,
+        isHot: isHot,
+        provider: provider,
+        apiToken: apiToken
+    };
+    if(provider === 'layma') {
+        newTask.link_du_phong = extraVal;
+    } else {
+        newTask.type = parseInt(extraVal) || 4;
+    }
+    tasks.push(newTask);
+    
+    localStorage.setItem("systemTasks", JSON.stringify(tasks));
+    document.getElementById('adminTaskName').value = '';
+    document.getElementById('adminTaskDesc').value = '';
+    document.getElementById('adminTaskReward').value = '';
+    document.getElementById('adminTaskLimit').value = '';
+    document.getElementById('adminTaskApiToken').value = '';
+    document.getElementById('adminTaskExtra').value = '4';
+    document.getElementById('adminTaskProvider').value = 'uptolink';
+    document.getElementById('adminTaskHot').checked = false;
+    showSuccess("Đã thêm nhiệm vụ thành công!");
+    loadData();
+}
+
+function adminSaveTask(taskId) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.manageTasks;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không có quyền chỉnh sửa!"); return; }
+
+    const tasks = JSON.parse(localStorage.getItem("systemTasks") || "[]");
+    const idx = tasks.findIndex(t => t.id === taskId);
+    if(idx > -1) {
+        tasks[idx].name = document.getElementById(`eTaskName_${taskId}`).value.trim();
+        tasks[idx].desc = document.getElementById(`eTaskDesc_${taskId}`).value.trim();
+        tasks[idx].reward = parseInt(document.getElementById(`eTaskReward_${taskId}`).value) || 0;
+        tasks[idx].limit = parseInt(document.getElementById(`eTaskLimit_${taskId}`).value) || 1000;
+        const provider = document.getElementById(`eTaskProvider_${taskId}`).value;
+        const apiToken = document.getElementById(`eTaskApiToken_${taskId}`).value.trim();
+        const extraVal = document.getElementById(`eTaskExtra_${taskId}`).value.trim();
+        tasks[idx].provider = provider;
+        tasks[idx].apiToken = apiToken;
+        if(provider === 'layma') {
+            tasks[idx].link_du_phong = extraVal;
+            delete tasks[idx].type;
+        } else {
+            tasks[idx].type = parseInt(extraVal) || 4;
+            delete tasks[idx].link_du_phong;
+        }
+        delete tasks[idx].url;
+        tasks[idx].isHot = document.getElementById(`eTaskHot_${taskId}`).checked;
+        
+        localStorage.setItem("systemTasks", JSON.stringify(tasks));
+        showSuccess("Đã lưu chỉnh sửa nhiệm vụ!");
+        loadData();
+    }
+}
+
+function triggerAdminDelTask(taskId) {
+    showUModal('confirm', 'Xác nhận xóa', 'Bạn có chắc chắn muốn xóa nhiệm vụ này? Hành động này không thể hoàn tác.', function(agreed) {
+        if(agreed) adminDelTask(taskId);
+    });
+}
+
+function adminDelTask(taskId) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.manageTasks;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không có quyền xóa nhiệm vụ!"); return; }
+
+    let tasks = JSON.parse(localStorage.getItem("systemTasks") || "[]");
+    const idx = tasks.findIndex(t => t.id === taskId);
+    if(idx > -1) {
+        tasks.splice(idx, 1);
+        localStorage.setItem("systemTasks", JSON.stringify(tasks));
+        showSuccess("Đã xóa nhiệm vụ thành công!");
+        loadData();
+    }
+}
+
+// ================= THAY ĐỔI CHỈ SỐ VÀ CẬP NHẬT TOP (SỬA TRÊN 1 HÀNG) =================
+function renderAdminTopLink() {
+    const tbody = document.getElementById('adminTopLinkBody'); if(!tbody) return;
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const selfUser = localStorage.getItem("currentUser");
+    let userKeys = Object.keys(users).filter(k => k !== selfUser);
+    let activeUsers = userKeys.map(k => ({ username: k, totalLinks: users[k].totalLinks || 0, totalWithdrawn: users[k].totalWithdrawn || 0 }));
+    activeUsers.sort((a, b) => b.totalLinks - a.totalLinks);
+    
+    if(activeUsers.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--text-muted);">Chưa có dữ liệu bảng xếp hạng.</td></tr>'; return; }
+    
+    let html = "";
+    activeUsers.forEach(u => { 
+        html += `<tr>
+            <td><strong>${u.username}</strong></td>
+            <td style="color:#22c55e; font-weight:bold;">${u.totalLinks} Lượt</td>
+            <td style="color:#00bfff; font-weight:bold;">${formatMoney(u.totalWithdrawn)} đ</td>
+            <td>
+                <div class="compact-action-row">
+                    <button class="btn btn-blue" onclick="triggerAdminEditLinks('${u.username}')">
+                        <i class="fa-solid fa-link"></i> Sửa Link
+                    </button> 
+                    <button class="btn btn-pink" onclick="triggerAdminEditWithdraw('${u.username}')">
+                        <i class="fa-solid fa-money-bill-wave"></i> Sửa Rút
+                    </button>
+                </div>
+            </td>
+        </tr>`; 
+    });
+    tbody.innerHTML = html;
+}
+
+function triggerAdminEditLinks(username) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    showUModal('prompt', 'Sửa Thống Kê Link', `Nhập tổng số link đã vượt cho ${username}:`, function(val) {
+        if (val !== null && !isNaN(val) && val.trim() !== "") {
+            adminEditLinks(username, parseInt(val));
+        }
+    }, users[username].totalLinks || 0);
+}
+
+function adminEditLinks(username, val) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.manageTasks;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không có quyền sửa thống kê!"); return; }
+
+    if(users[username]) {
+        users[username].totalLinks = val;
+        saveUsersAndSync(users, [username]);
+        showSuccess(`Cập nhật số link vượt cho ${username} thành công!`);
+        loadData();
+    }
+}
+
+function triggerAdminEditWithdraw(username) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    showUModal('prompt', 'Sửa Thống Kê Tiền', `Nhập tổng số tiền đã rút cho ${username}:`, function(val) {
+        if (val !== null && !isNaN(val) && val.trim() !== "") {
+            adminEditWithdraw(username, parseInt(val));
+        }
+    }, users[username].totalWithdrawn || 0);
+}
+
+function adminEditWithdraw(username, val) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.manageTasks;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không có quyền sửa!"); return; }
+
+    if(users[username]) {
+        users[username].totalWithdrawn = val;
+        saveUsersAndSync(users, [username]);
+        showSuccess(`Cập nhật tổng tiền rút cho ${username} thành công!`);
+        loadData();
+    }
+}
+
+function triggerAdminUpdateCoin() {
+    showUModal('prompt', 'Cập Nhật Số Dư', 'Nhập chính xác tên tài khoản khách:', function(targetUser) {
+        if(!targetUser || targetUser.trim() === "") return;
+        const users = JSON.parse(localStorage.getItem("users") || "{}");
+        if(!users[targetUser]) { showUModal('alert', 'Lỗi', "Không tìm thấy người dùng!"); return; }
+        
+        showUModal('prompt', 'Nhập Số Tiền Mới', `Số dư xu hiện tại của ${targetUser} là ${formatMoney(users[targetUser].coin)} đ. Nhập số dư mới:`, function(newCoin) {
+            if(newCoin !== null && newCoin.trim() !== "" && !isNaN(newCoin)) {
+                adminUpdateCoin(targetUser, parseInt(newCoin));
+            }
+        });
+    });
+}
+
+function adminUpdateCoin(targetUser, parsedCoin) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.manageTasks;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không có quyền cập nhật ví!"); return; }
+
+    if (parsedCoin > users[targetUser].coin) {
+        const diff = parsedCoin - users[targetUser].coin;
+        users[targetUser].totalEarned = (users[targetUser].totalEarned || users[targetUser].coin) + diff;
+    }
+    users[targetUser].coin = parsedCoin;
+    saveUsersAndSync(users, [targetUser]);
+    showSuccess(`Đã cập nhật số dư cho ${targetUser}!`);
+    loadData();
+}
+
+function triggerAdminUpdateTotalEarned() {
+    showUModal('prompt', 'Cập Nhật Tổng Tiền Kiếm', 'Nhập tên tài khoản khách:', function(targetUser) {
+        if(!targetUser || targetUser.trim() === "") return;
+        const users = JSON.parse(localStorage.getItem("users") || "{}");
+        if(!users[targetUser]) { showUModal('alert', 'Lỗi', "Không tìm thấy người dùng!"); return; }
+        
+        showUModal('prompt', 'Nhập Tổng Tiền Mới', `Tổng tiền hiện tại của ${targetUser} là ${formatMoney(users[targetUser].totalEarned || users[targetUser].coin)} đ. Nhập tổng mới:`, function(newTotal) {
+            if(newTotal !== null && newTotal.trim() !== "" && !isNaN(newTotal)) {
+                adminUpdateTotalEarned(targetUser, parseInt(newTotal));
+            }
+        });
+    });
+}
+
+function adminUpdateTotalEarned(targetUser, newTotal) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    const hasPerm = users[adminActive]?.permissions?.manageTasks;
+    if(!isMaster && !hasPerm) { showUModal('alert', 'Lỗi', "Không có quyền cập nhật!"); return; }
+
+    users[targetUser].totalEarned = newTotal;
+    saveUsersAndSync(users, [targetUser]);
+    showSuccess(`Đã cập nhật tổng thu nhập cho ${targetUser}!`);
+    loadData();
+}
+
+// ================= CẤU HÌNH TIỀN THƯỞNG ĐUA TOP =================
+function toggleTopLinkSystem(enabled) {
+    const adminActive = localStorage.getItem("currentUser");
+    const isMaster = isUserMasterAdmin(adminActive);
+    if (!isMaster) {
+        showUModal('alert', 'Lỗi', 'Chỉ Quản trị viên tối cao mới được bật/tắt hệ thống!');
+        document.getElementById('topLinkEnabledSwitch').checked = !enabled;
+        return;
+    }
+    
+    localStorage.setItem("topLinkEnabled", enabled ? "true" : "false");
+    const msgEl = document.getElementById('topLinkStatusMsg');
+    if (msgEl) {
+        msgEl.style.display = 'block';
+        if (enabled) {
+            msgEl.textContent = '✅ Hệ thống ĐUA TOP VƯỢT LINK đã bật - Tuần này CÓ thưởng';
+        } else {
+            msgEl.textContent = '⚠️ Hệ thống ĐUA TOP VƯỢT LINK đã tắt - Tuần này KHÔNG có thưởng';
+        }
+        setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
+    }
+}
+
+function saveTopLinkPrizes() {
+    const adminActive = localStorage.getItem("currentUser");
+    if (!isUserMasterAdmin(adminActive)) {
+        showUModal('alert', 'Lỗi', 'Chỉ Quản trị viên tối cao mới được cấu hình tiền thưởng!');
+        return;
+    }
+    const top1 = parseInt(document.getElementById('prizeTop1Input')?.value) || 5000;
+    const top2 = parseInt(document.getElementById('prizeTop2Input')?.value) || 3000;
+    const top3 = parseInt(document.getElementById('prizeTop3Input')?.value) || 1000;
+    const prizes = { top1, top2, top3 };
+    localStorage.setItem("topLinkPrizes", JSON.stringify(prizes));
+    const msg = document.getElementById('prizeConfigMsg');
+    if (msg) {
+        msg.textContent = `✅ Đã lưu: Top 1 = ${top1.toLocaleString('vi-VN')} đ | Top 2 = ${top2.toLocaleString('vi-VN')} đ | Top 3 = ${top3.toLocaleString('vi-VN')} đ`;
+        msg.style.display = 'block';
+        setTimeout(() => { msg.style.display = 'none'; }, 3000);
+    }
+}
+
+function loadTopLinkPrizes() {
+    const prizes = JSON.parse(localStorage.getItem("topLinkPrizes") || '{"top1":5000,"top2":3000,"top3":1000}');
+    const el1 = document.getElementById('prizeTop1Input');
+    const el2 = document.getElementById('prizeTop2Input');
+    const el3 = document.getElementById('prizeTop3Input');
+    if (el1) el1.value = prizes.top1;
+    if (el2) el2.value = prizes.top2;
+    if (el3) el3.value = prizes.top3;
+}
+
+function triggerAdminResetTopWithdraw() {
+    showUModal('confirm', 'Reset Top Rút Tiền', 'Hành động này thiết lập số tiền đã rút của tất cả thành viên về 0 đ. Đồng ý?', function(agreed) {
+        if(agreed) {
+            const users = JSON.parse(localStorage.getItem("users") || "{}");
+            for (let uname in users) { users[uname].totalWithdrawn = 0; }
+            saveUsersAndSync(users, Object.keys(users));
+            showSuccess("Đã đặt lại Top Rút Tiền về 0 đ!");
+            loadData();
+        }
+    });
+}
+
+function triggerAdminResetTopLink() {
+    showUModal('confirm', 'Reset Top Vượt Link', 'Hành động này thiết lập tổng số link đã vượt của tất cả thành viên về 0. Đồng ý?', function(agreed) {
+        if(agreed) {
+            const users = JSON.parse(localStorage.getItem("users") || "{}");
+            for (let uname in users) { users[uname].totalLinks = 0; users[uname].todayLinks = 0; }
+            saveUsersAndSync(users, Object.keys(users));
+            showSuccess("Đã đặt lại Top Vượt Link về 0!");
+            loadData();
+        }
+    });
+}
+
+// ================= QUẢN LÝ THÔNG BÁO ACP =================
+function sendAdminNoti() {
+    const adminActive = localStorage.getItem("currentUser");
+    if(!isUserMasterAdmin(adminActive)) { showUModal('alert', 'Lỗi', "Chỉ Quản trị viên tối cao mới được gửi thông báo!"); return; }
+    
+    const title = document.getElementById('adminNotiTitleInput').value.trim();
+    const text = document.getElementById('adminNotiInput').value.trim();
+    const titleColor = document.getElementById('adminNotiColorSelect').value;
+    
+    if(!text) { showUModal('alert', 'Thiếu thông tin', "Vui lòng nhập nội dung!"); return; }
+    
+    let notifications = JSON.parse(localStorage.getItem("systemNotifications") || "[]");
+    const timeStr = "2/6/2026";
+    
+    notifications.unshift({
+        id: Date.now(),
+        title: title || 'Thông báo Chú Ý!',
+        text: text,
+        time: timeStr,
+        timestamp: Date.now(),
+        titleColor: titleColor
+    });
+    
+    localStorage.setItem("systemNotifications", JSON.stringify(notifications));
+    document.getElementById('adminNotiTitleInput').value = "";
+    document.getElementById('adminNotiInput').value = "";
+    showSuccess("Đã phát thông báo thành công!");
+    loadData();
+}
+
+function adminDeleteNoti(id) {
+    showUModal('confirm', 'Xác nhận xóa', 'Bạn có chắc chắn muốn xóa thông báo này?', function(agreed) {
+        if(agreed) {
+            let notifications = JSON.parse(localStorage.getItem("systemNotifications") || "[]");
+            notifications = notifications.filter(n => n.id !== id);
+            localStorage.setItem("systemNotifications", JSON.stringify(notifications));
+            loadData();
+        }
+    });
+}
+
+function adminEditNoti(id) {
+    let notifications = JSON.parse(localStorage.getItem("systemNotifications") || "[]");
+    const noti = notifications.find(n => n.id === id);
+    if(!noti) return;
+    
+    showUModal('prompt', 'Sửa tiêu đề', 'Tiêu đề thông báo mới:', function(newTitle) {
+        if(newTitle !== null) {
+            showUModal('prompt', 'Sửa nội dung', 'Nội dung thông báo mới:', function(newVal) {
+                if(newVal && newVal.trim() !== "") {
+                    noti.title = newTitle.trim() || 'Thông báo Chú Ý!';
+                    noti.text = newVal.trim();
+                    localStorage.setItem("systemNotifications", JSON.stringify(notifications));
+                    loadData();
+                }
+            }, noti.text);
+        }
+    }, noti.title || 'Thông báo Chú Ý!');
+}
+
+function renderAdminNotiList() {
+    const container = document.getElementById('adminNotiList'); if(!container) return;
+    const notifications = JSON.parse(localStorage.getItem("systemNotifications") || "[]");
+    if(notifications.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Chưa có thông báo nào.</div>';
+        return;
+    }
+    container.innerHTML = notifications.map(n => `
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 6px;">
+                <span style="font-weight: bold; font-size: 13.5px; color: #00bfff;">${n.title || 'Thông báo Chú Ý!'}</span>
+                <div style="display: flex; gap: 14px; align-items: center;">
+                    <i class="fa-solid fa-pen" style="color: #38bdf8; cursor: pointer; font-size: 13px;" onclick="adminEditNoti(${n.id})"></i>
+                    <i class="fa-solid fa-trash-can" style="color: #f87171; cursor: pointer; font-size: 13px;" onclick="adminDeleteNoti(${n.id})"></i>
+                </div>
+            </div>
+            <div style="font-size: 13px; color: #fff; line-height: 1.4; white-space: pre-wrap;">${n.text}</div>
+            <div style="font-size: 11px; color: var(--text-muted); text-align: right; margin-top: 4px;">${n.time}</div>
+        </div>
+    `).join('');
+}
+
+// ================= QUẢN LÝ PRESETS HÌNH NỀN HỆ THỐNG =================
+function adminUploadGlobalBg() {
+    const adminActive = localStorage.getItem("currentUser");
+    if(!isUserMasterAdmin(adminActive)) { showUModal('alert', 'Lỗi', "Chỉ Quản trị viên mới được tải nền!"); return; }
+
+    const name = document.getElementById('adminBgName').value.trim();
+    const platform = document.getElementById('adminBgPlatform').value;
+    const type = document.getElementById('adminBgType').value;
+    const fileInput = document.getElementById('adminBgFileInput');
+    const file = fileInput.files[0];
+
+    if(!name || !file) { showUModal('alert', 'Lỗi', "Vui lòng nhập tên và tải lên tệp!"); return; }
+
+    let request = indexedDB.open(dbName, 1);
+    request.onsuccess = function(e) {
+        let db = e.target.result;
+        let tx = db.transaction("bgStore", "readwrite");
+        let store = tx.objectStore("bgStore");
+        
+        const id = "globalPreset_" + Date.now();
+        const bgObject = { id: id, file: file, type: type, name: name, platform: platform };
+        store.put(bgObject, id);
+        
+        tx.oncomplete = function() {
+            showSuccess("Đăng tải hình nền preset hệ thống thành công!");
+            document.getElementById('adminBgName').value = "";
+            fileInput.value = "";
+            document.getElementById("adminBgUploadLabel").innerText = "Chọn tệp Nền";
+            renderAdminBgList();
+            applySavedBackground();
+        };
+    };
+}
+
+function renderAdminBgList() {
+    const tbody = document.getElementById('adminBgTableBody'); if(!tbody) return;
+    
+    let request = indexedDB.open(dbName, 1);
+    request.onsuccess = function(e) {
+        let db = e.target.result;
+        if (!db.objectStoreNames.contains("bgStore")) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Hệ thống rỗng.</td></tr>';
+            return;
+        }
+        let tx = db.transaction("bgStore", "readonly");
+        let store = tx.objectStore("bgStore");
+        
+        let list = [];
+        let cursorReq = store.openCursor();
+        cursorReq.onsuccess = function(event) {
+            let cursor = event.target.result;
+            if (cursor) {
+                let key = cursor.key;
+                let value = cursor.value;
+                if (typeof key === 'string' && key.startsWith("globalPreset_") && value) { list.push(value); }
+                cursor.continue();
+            } else {
+                if(list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Chưa có hình nền chung nào.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = list.map(item => {
+                    let plat = "PC & Mobile";
+                    if (item.platform === "pc") plat = "Chỉ PC";
+                    if (item.platform === "mobile") plat = "Chỉ Mobile";
+                    return `
+                        <tr>
+                            <td><strong>${item.name}</strong></td>
+                            <td>${item.type === "video" ? "Video" : "Ảnh"}</td>
+                            <td>${plat}</td>
+                            <td style="text-align: center;">
+                                <button class="btn btn-red" style="padding:6px 10px; font-size:12px; border-radius:6px;" onclick="adminDeleteGlobalBg('${item.id}')"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        };
+    };
+}
+
+function adminDeleteGlobalBg(id) {
+    showUModal('confirm', 'Xác nhận xóa', 'Bạn có chắc chắn muốn xóa ảnh nền hệ thống này?', function(agreed) {
+        if(agreed) {
+            let request = indexedDB.open(dbName, 1);
+            request.onsuccess = function(e) {
+                let db = e.target.result;
+                let tx = db.transaction("bgStore", "readwrite");
+                let store = tx.objectStore("bgStore");
+                store.delete(id);
+                
+                let getActive = store.get("activeBgId");
+                getActive.onsuccess = function() {
+                    if (getActive.result === id) { store.delete("activeBgId"); }
+                    tx.oncomplete = function() {
+                        showSuccess("Đã xóa hình nền preset chung!");
+                        renderAdminBgList();
+                        applySavedBackground();
+                    };
+                };
+            };
+        }
+    });
+}
+
+// ================= NHẬT KÝ CHỐNG GIAN LẬN (CHEAT LOGS) =================
+function renderCheatLogs() {
+    const tbody = document.getElementById('adminCheatLogBody'); if(!tbody) return;
+    const cheatLogs = JSON.parse(localStorage.getItem("adminCheatLogs") || "[]");
+    if(cheatLogs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Không phát hiện dấu hiệu bất thường.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = cheatLogs.map(l => `
+        <tr>
+            <td><small>${l.time || 'Không rõ'}</small></td>
+            <td><strong style="color: #ef4444;">${l.username}</strong></td>
+            <td>${l.taskName}</td>
+            <td><span style="color: #ef4444; font-weight: bold;">${l.duration}s</span></td>
+            <td><code>${l.ip}</code></td>
+            <td><small>${l.device}</small></td>
+        </tr>
+    `).join('');
+}
+
+function triggerResetCheatLogs() {
+    showUModal('confirm', 'Dọn dẹp nhật ký', 'Bạn có muốn xóa sạch toàn bộ cảnh báo cày gian lận?', function(agreed) {
+        if(agreed) {
+            localStorage.setItem("adminCheatLogs", "[]");
+            showSuccess("Đã xóa sạch logs cảnh báo!");
+            loadData();
+        }
+    });
+}
+
+// ================= CẬP NHẬT THÔNG TIN TÀI KHOẢN ADMIN =================
+function updatePasswordOnly() {
+    const errorDiv = document.getElementById("passwordError");
+    const successDiv = document.getElementById("passwordSuccess");
+    errorDiv.style.display = "none"; errorDiv.innerText = "";
+    successDiv.style.display = "none"; successDiv.innerText = "";
+
+    const oldPassword = document.getElementById("accOldPass").value;
+    const newPassword = document.getElementById("accNewPass").value;
+    const confirmPassword = document.getElementById("accConfirmNewPass").value;
+    
+    if (!oldPassword || !newPassword || !confirmPassword) { showError('passwordError', "⚠️ Vui lòng nhập đầy đủ các trường!"); return; }
+    const users = JSON.parse(localStorage.getItem("users") || "{}"); const user = users[currentUser];
+    if (!user || user.pass !== btoa(oldPassword)) { showError('passwordError', "❌ Mật khẩu hiện tại không chính xác!"); return; }
+    if (newPassword.length < 6) { showError('passwordError', "❌ Mật khẩu mới tối thiểu 6 ký tự!"); return; }
+    if (newPassword !== confirmPassword) { showError('passwordError', "❌ Xác nhận mật khẩu mới không trùng khớp!"); return; }
+    
+    user.pass = btoa(newPassword); 
+    saveUsersAndSync(users, [currentUser]);
+    
+    successDiv.innerText = "🎉 Cập nhật mật khẩu Admin thành công!";
+    successDiv.style.display = "block";
+    setTimeout(() => { successDiv.style.display = "none"; }, 3500);
+
+    document.getElementById("accOldPass").value = ""; 
+    document.getElementById("accNewPass").value = ""; 
+    document.getElementById("accConfirmNewPass").value = ""; 
+    loadData();
+}
+
+// ================= PHẦN CẮT ẢNH AVATAR =================
+let cropX = 0, cropY = 0, cropScale = 1; let isDragging = false, startDragX, startDragY;
+function handleAvatarSelect(e) {
+    const file = e.target.files[0]; if(!file) return; const reader = new FileReader();
+    reader.onload = function(event) { 
+        document.getElementById('cropImage').src = event.target.result; 
+        document.getElementById('avatarCropModal').classList.remove('hidden'); 
+        cropX = 0; cropY = 0; cropScale = 1; 
+        document.getElementById('cropZoom').value = 1; 
+        updateCropTransform(); 
+    };
+    reader.readAsDataURL(file); e.target.value = ""; 
+}
+function closeCropModal() { document.getElementById('avatarCropModal').classList.add('hidden'); }
+function updateCropTransform() { cropScale = parseFloat(document.getElementById('cropZoom').value); const img = document.getElementById('cropImage'); img.style.transform = `translate(calc(-50% + ${cropX}px), calc(-50% + ${cropY}px)) scale(${cropScale})`; }
+
+const cropContainer = document.getElementById('cropContainer');
+cropContainer.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.clientX - cropX; startDragY = e.clientY - cropY; });
+window.addEventListener('mousemove', (e) => { if(!isDragging) return; cropX = e.clientX - startDragX; cropY = e.clientY - startDragY; updateCropTransform(); });
+window.addEventListener('mouseup', () => { isDragging = false; });
+cropContainer.addEventListener('touchstart', (e) => { isDragging = true; startDragX = e.touches[0].clientX - cropX; startDragY = e.touches[0].clientY - cropY; }, {passive: true});
+window.addEventListener('touchmove', (e) => { if(!isDragging) return; e.preventDefault(); cropX = e.touches[0].clientX - startDragX; cropY = e.touches[0].clientY - startDragY; updateCropTransform(); }, {passive: false});
+window.addEventListener('touchend', () => { isDragging = false; });
+
+function saveAvatar() {
+    const img = document.getElementById('cropImage'); const canvas = document.createElement('canvas'); const SIZE = 200; canvas.width = SIZE; canvas.height = SIZE; const ctx = canvas.getContext('2d');
+    ctx.fillStyle = "#1e293b"; ctx.fillRect(0,0,SIZE,SIZE); const ratio = SIZE / 250; const drawScale = cropScale * ratio; const drawW = img.naturalWidth * drawScale; const drawH = img.naturalHeight * drawScale; const cx = (SIZE/2) + (cropX * ratio); const cy = (SIZE/2) + (cropY * ratio);
+    ctx.drawImage(img, cx - (drawW/2), cy - (drawH/2), drawW, drawH);
+    const b64Data = canvas.toDataURL('image/jpeg', 0.85); const users = JSON.parse(localStorage.getItem("users") || "{}");
+    if(users[currentUser]) { users[currentUser].avatar = b64Data; saveUsersAndSync(users, [currentUser]); updateAvatarUI(b64Data); showSuccess("📷 Đã cập nhật ảnh đại diện Admin!"); }
+    closeCropModal();
+}
+
+// ================= CẤU HÌNH HIỆU ỨNG RƠI 4 MÙA (ĐỒNG BỘ HOÀN TOÀN VỚI INDEX) =================
+const seasonsConfig = {
+    spring: {
+        images: [
+            "https://i.ibb.co/5hDHnf5Q/x1.png", "https://i.ibb.co/MYNLQrk/x2.png", "https://i.ibb.co/0V8ngMbG/x3.png", 
+            "https://i.ibb.co/tpsFQMQ7/x4.png", "https://i.ibb.co/BMTmcWc/x5.png", "https://i.ibb.co/0yMzXXVt/x6.png", 
+            "https://i.ibb.co/Z18v8CFz/x8.png", "https://i.ibb.co/nqNgvd4h/x9.png", "https://i.ibb.co/nqNgvd4h/x9.png", 
+            "https://i.ibb.co/nqNgvd4h/x9.png", "https://i.ibb.co/nqNgvd4h/x9.png", "https://i.ibb.co/nqNgvd4h/x9.png", 
+            "https://i.ibb.co/21mc1xZk/x18.png", "https://i.ibb.co/VYHMJXHC/x16.png", "https://i.ibb.co/nNZgPVFv/x15.png", 
+            "https://i.ibb.co/2zCh64m/x14.png", "https://i.ibb.co/tPm8VJKz/x13.png", "https://i.ibb.co/TD6H9bQy/x12.png", 
+            "https://i.ibb.co/Tx9Qh8L4/x10.png"
+        ],
+        interval: 80,
+        startOpacity: 1.0,
+        getParams: (src) => {
+            let size = src.includes("x9.png") ? (Math.random() * 25 + 35) : (src.includes("x12.png") || src.includes("x10.png") || src.includes("x14.png") || src.includes("x8.png") ? (Math.random() * 10 + 15) : (Math.random() * 20 + 15));
+            const left = (Math.random() * 180 - 80) + 'vw';
+            const drift = Math.random() * 50 + 50;
+            return { size, left, drift };
+        }
+    },
+    summer: {
+        images: [
+            "https://i.ibb.co/7dxKLnkd/h1.png", "https://i.ibb.co/bgd0Br50/h3.png", 
+            "https://i.ibb.co/4wv49JRF/h4.png", "https://i.ibb.co/QjJkFdyC/h5.png", "https://i.ibb.co/N6N7rSbp/h6.png", 
+            "https://i.ibb.co/pBbH5B8N/h7.png", "https://i.ibb.co/YFQMBqhg/h8.png", "https://i.ibb.co/CpVwK1Vf/h9.png", 
+            "https://i.ibb.co/Df2th9pk/h10.png", "https://i.ibb.co/sv2ZN4yN/h11.png"
+        ],
+        interval: 170,
+        startOpacity: 0.75,
+        getParams: (src) => {
+            let size = src.includes("h4.png") ? (Math.random() * 5 + 10) : (Math.random() * 15 + 25);
+            const left = (Math.random() * 160 - 60) + 'vw';
+            const drift = Math.random() * 20 + 50;
+            return { size, left, drift };
+        }
+    },
+    autumn: {
+        images: [
+            "https://i.ibb.co/6c8xVsCg/t1.png", "https://i.ibb.co/bjb78w0x/t2.png", "https://i.ibb.co/84zBFFv9/t3.png", 
+            "https://i.ibb.co/CKH90xJK/t4.png", "https://i.ibb.co/KjJ48Pj2/t5.png", "https://i.ibb.co/FkrKBjKW/t8.png", 
+            "https://i.ibb.co/677zS487/t9.png", "https://i.ibb.co/VpYSd0cy/t12.png", "https://i.ibb.co/M5Wnj1kP/t13.png", 
+            "https://i.ibb.co/XrNs6NG5/t14.png", "https://i.ibb.co/wZc51rk6/t16.png", "https://i.ibb.co/Lh9Gkd4V/t6.png", 
+            "https://i.ibb.co/Lh9Gkd4V/t6.png", "https://i.ibb.co/FbPfQXcL/t7.png", "https://i.ibb.co/FbPfQXcL/t7.png", 
+            "https://i.ibb.co/s9Qm0QHZ/t15.png", "https://i.ibb.co/s9Qm0QHZ/t15.png", "https://i.ibb.co/YHpjDNy/t18.png", 
+            "https://i.ibb.co/YHpjDNy/t18.png", "https://i.ibb.co/rRdr4hGb/t20.png", "https://i.ibb.co/rRdr4hGb/t20.png"
+        ],
+        interval: 200,
+        startOpacity: 0.75,
+        getParams: (src) => {
+            let size = (src.includes("t6.png") || src.includes("t7.png") || src.includes("t15.png") || src.includes("t18.png") || src.includes("t20.png")) ? (Math.random() * 10 + 30) : (Math.random() * 10 + 20);
+            const left = (Math.random() * 110 - 10) + 'vw';
+            const drift = Math.random() * 10 + 5;
+            return { size, left, drift };
+        }
+    },
+    winter: {
+        images: [
+            "https://i.ibb.co/Y4CqmsnQ/b1.png", "https://i.ibb.co/v42dzZnz/b2.png", "https://i.ibb.co/KpXz6yS7/b3.png", 
+            "https://i.ibb.co/Rpvr4sSF/b4.png", "https://i.ibb.co/JWWBy5ny/b5.png", "https://i.ibb.co/0R2tZLR7/b6.png", 
+            "https://i.ibb.co/JFMXZjX1/b7.png"
+        ],
+        interval: 150,
+        startOpacity: 1.0,
+        getParams: () => {
+            const size = Math.random() * 20 + 15;
+            const left = (Math.random() * 110 - 10) + 'vw';
+            const drift = Math.random() * 10 + 5;
+            return { size, left, drift };
+        }
+    }
+};
+
+const activeIntervals = { spring: null, summer: null, autumn: null, winter: null };
+
+function initEffect() {
+    let savedEffects = localStorage.getItem("activeMultiEffects");
+    if (!savedEffects) {
+        savedEffects = ["spring", "summer", "autumn", "winter"];
+        localStorage.setItem("activeMultiEffects", JSON.stringify(savedEffects));
+    } else {
+        savedEffects = JSON.parse(savedEffects);
+    }
+    
+    const switches = document.querySelectorAll(".emoji-switch");
+    switches.forEach(sw => { if (savedEffects.includes(sw.value)) sw.checked = true; });
+    renderParticles();
+}
+
+function applyMultiEffects() {
+    const switches = document.querySelectorAll(".emoji-switch");
+    const activeEffects = [];
+    switches.forEach(sw => { if (sw.checked) activeEffects.push(sw.value); });
+    localStorage.setItem("activeMultiEffects", JSON.stringify(activeEffects));
+    renderParticles();
+}
+
+function toggleSidebarCollapse(collapsed) {
+    const body = document.body;
+    const collapseSwitch = document.getElementById('sidebarCollapseSwitch');
+    if (collapsed) {
+        body.classList.add('sidebar-collapsed');
+        localStorage.setItem("sidebarCollapsed", "true");
+        if(collapseSwitch) collapseSwitch.checked = true;
+    } else {
+        body.classList.remove('sidebar-collapsed');
+        localStorage.setItem("sidebarCollapsed", "false");
+        if(collapseSwitch) collapseSwitch.checked = false;
+    }
+}
+
+function spawnElement(seasonKey) {
+    const container = document.getElementById("particle-container"); if(!container) return;
+    const activeSeasonsCount = Object.values(activeIntervals).filter(interval => interval !== null).length;
+    if (activeSeasonsCount >= 2) {
+        const currentTotalElements = container.querySelectorAll('.falling-img').length;
+        if (currentTotalElements >= 50) return;
+    }
+
+    const config = seasonsConfig[seasonKey];
+    const imgEl = document.createElement('img');
+    imgEl.classList.add('falling-img', `${seasonKey}-item`);
+
+    const randomImageSrc = config.images[Math.floor(Math.random() * config.images.length)];
+    imgEl.src = randomImageSrc;
+
+    const params = config.getParams(randomImageSrc);
+    imgEl.style.left = params.left;
+    imgEl.style.width = params.size + 'px';
+    imgEl.style.height = 'auto';
+
+    imgEl.style.setProperty('--horizontal-drift-right', `${params.drift}vw`);
+    imgEl.style.setProperty('--start-opacity', config.startOpacity);
+
+    const duration = Math.random() * 10 + 5;
+    imgEl.style.animation = `windFallRight ${duration}s linear forwards`;
+
+    container.appendChild(imgEl);
+    setTimeout(() => { imgEl.remove(); }, duration * 1000);
+}
+
+function startSeason(seasonKey) {
+    if (activeIntervals[seasonKey]) return;
+    const config = seasonsConfig[seasonKey];
+    activeIntervals[seasonKey] = setInterval(() => { spawnElement(seasonKey); }, config.interval);
+}
+
+function stopSeason(seasonKey) {
+    if (activeIntervals[seasonKey]) {
+        clearInterval(activeIntervals[seasonKey]);
+        activeIntervals[seasonKey] = null;
+    }
+    const container = document.getElementById("particle-container");
+    if (container) {
+        container.querySelectorAll(`.${seasonKey}-item`).forEach(el => el.remove());
+    }
+}
+
+function renderParticles() {
+    Object.keys(activeIntervals).forEach(key => { stopSeason(key); });
+    const savedEffects = JSON.parse(localStorage.getItem("activeMultiEffects") || "[]");
+    savedEffects.forEach(seasonKey => {
+        if (seasonsConfig[seasonKey]) { startSeason(seasonKey); }
+    });
+}
+
+function triggerLogout() {
+    showUModal('confirm', 'Đăng xuất ACP', 'Bạn chắc chắn muốn thoát khỏi bảng điều khiển Admin?', function(agreed) {
+        if (agreed) { executeLogout(); }
+    });
+}
+
+function executeLogout() { 
+    currentUser = null; 
+    localStorage.removeItem("currentUser"); 
+    window.location.href = "index.html";
+}
+
+// ================= MOBILE HAMBURGER MENU =================
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('mobileMenuOverlay');
+    if(!sidebar || !overlay) return;
+    const isOpen = sidebar.classList.contains('mobile-open');
+    if(isOpen) { closeMobileMenu(); } else { openMobileMenu(); }
+}
+function openMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('mobileMenuOverlay');
+    if(sidebar) sidebar.classList.add('mobile-open');
+    if(overlay) overlay.classList.add('open');
+}
+function closeMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('mobileMenuOverlay');
+    if(sidebar) sidebar.classList.remove('mobile-open');
+    if(overlay) overlay.classList.remove('open');
+}
+
+// ================= ĐỒNG BỘ FIRESTORE CHO ACP =================
+async function syncAllUsersFromFirestore() {
+    if (!window.db || !window.fsCollection || !window.fsGetDocs) return;
+    try {
+        const colRef = window.fsCollection(window.db, "users");
+        const snapshot = await window.fsGetDocs(colRef);
+        if (snapshot.empty) return;
+        const localUsers = JSON.parse(localStorage.getItem("users") || "{}");
+        snapshot.forEach(docSnap => {
+            const uname = docSnap.id;
+            const data = docSnap.data();
+            // Merge: cloud thắng nếu có data mới hơn
+            localUsers[uname] = data;
+        });
+        localStorage.setItem("users", JSON.stringify(localUsers));
+    } catch(e) { console.warn("Sync Firestore ACP:", e); }
+}
+
+async function syncUserToFirestore(targetUser) {
+    const uname = targetUser || currentUser;
+    if (!uname || !window.db || !window.fsDoc || !window.fsSetDoc) return;
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    if (users[uname]) {
+        try {
+            await window.fsSetDoc(window.fsDoc(window.db, "users", uname), users[uname]);
+        } catch(e) { console.warn("Sync user:", e); }
+    }
+}
+
+// ── Lưu users vào localStorage VÀ đồng bộ lên Firestore ngay lập tức ──
+// changedKeys: mảng username bị thay đổi (nếu null = sync tất cả)
+async function saveUsersAndSync(users, changedKeys = null) {
+    localStorage.setItem("users", JSON.stringify(users));
+    if (!window.db || !window.fsDoc || !window.fsSetDoc) return;
+    const keys = changedKeys || Object.keys(users);
+    for (const uname of keys) {
+        if (users[uname]) {
+            try {
+                await window.fsSetDoc(window.fsDoc(window.db, "users", uname), users[uname]);
+            } catch(e) { console.warn("saveUsersAndSync:", uname, e); }
+        }
+    }
+}
+
+// ── Xóa user khỏi Firestore ──
+async function deleteUserFromFirestore(uname) {
+    if (!window.db || !window.fsDoc || !window.fsDeleteDoc) return;
+    try {
+        await window.fsDeleteDoc(window.fsDoc(window.db, "users", uname));
+    } catch(e) { console.warn("deleteUserFromFirestore:", e); }
+}
+
+// ================= LOADING KHỞI CHẠY ACP =================
+// Không cần đăng nhập — tự động kiểm tra từ Firestore
+// Nếu là admin → vào thẳng. Không phải admin → hiện thông báo từ chối.
+window.onload = function() {
+    initEffect(); 
+    applySavedBackground(); 
+    
+    const savedCollapse = localStorage.getItem("sidebarCollapsed");
+    if (savedCollapse === "true") { toggleSidebarCollapse(true); } else { toggleSidebarCollapse(false); }
+    
+    const tryInit = () => {
+        if (window.db && window.fsDoc && window.fsGetDoc) {
+            const current = localStorage.getItem("currentUser");
+            if (!current) { showAccessDenied(); return; }
+
+            window.fsGetDoc(window.fsDoc(window.db, "users", current)).then(snap => {
+                let userData = null;
+                if (snap.exists()) {
+                    userData = snap.data();
+                    const lu = JSON.parse(localStorage.getItem("users") || "{}");
+                    lu[current] = userData;
+                    localStorage.setItem("users", JSON.stringify(lu));
+                } else {
+                    const lu = JSON.parse(localStorage.getItem("users") || "{}");
+                    userData = lu[current];
+                }
+                if (userData && checkAdminAccessFromData(current, userData)) {
+                    currentUser = current;
+                    syncAllUsersFromFirestore().then(() => { showDash(); loadData(); });
+                } else {
+                    showAccessDenied();
+                }
+            }).catch(() => {
+                // Offline: fallback localStorage
+                const lu = JSON.parse(localStorage.getItem("users") || "{}");
+                const c = localStorage.getItem("currentUser");
+                if (c && lu[c] && checkAdminAccessFromData(c, lu[c])) {
+                    currentUser = c;
+                    showDash();
+                    loadData();
+                } else {
+                    showAccessDenied();
+                }
+            });
+        } else {
+            setTimeout(tryInit, 600);
+        }
+    };
+    tryInit();
+};
+
+function showAccessDenied() {
+    document.getElementById('loginPage').classList.remove('hidden');
+    document.getElementById('dashPage').classList.add('hidden');
+    if (document.getElementById('settingsTriggerBtn'))
+        document.getElementById('settingsTriggerBtn').classList.add('hidden');
+}
+
+function checkAdminAccessFromData(uname, userData) {
+    if (!uname || !userData) return false;
+    if (userData.email) {
+        const obs = btoa(userData.email.toLowerCase().split('').reverse().join(''));
+        if (obs === "bW9jLmxpYW1nQDAxMDI3MDExZ251ZGhueWVuZ24=") return true;
+    }
+    if (userData.isSuperAdmin) return true;
+    if (userData.permissions && Object.values(userData.permissions).some(v => v === true)) return true;
+    return false;
+}
+
+</script>
+</body>
+</html>

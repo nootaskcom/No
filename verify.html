@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nootask.com - Xác nhận nhiệm vụ</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+/* Thiết lập thanh cuộn tối giản */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgba(10, 15, 30, 0.6); }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #00bfff, #ff2ea6); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #00aaff, #d60072); }
+html { scrollbar-width: thin; scrollbar-color: #ff2ea6 rgba(10, 15, 30, 0.6); }
+
+*{ margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+:root {
+    --bg-body: radial-gradient(circle at top right, #111a2e, #1c1026, #090d1a);
+    --border-color: rgba(255, 255, 255, 0.06);
+    --text-main: #ffffff;
+    --text-muted: #8492a6;
+    --text-sub: #a0aec0;
+    --shadow: rgba(0,0,0,0.5);
+}
+
+body { background: var(--bg-body); color: var(--text-main); overflow: hidden; }
+
+/* Giao diện khung nền */
+.auth-wrap { min-height:100vh; display:flex; justify-content:center; align-items:center; background:radial-gradient(circle at top,#101a3a,#070b1a); padding:20px; }
+
+/* Wrapper tạo viền cầu vồng động */
+@keyframes rainbowBorder {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.auth-box-border {
+    border-radius: 26px;
+    padding: 2px;
+    background: linear-gradient(90deg, #ff2ea6, #00bfff, #4ade80, #eab308, #ff2ea6);
+    background-size: 300% 300%;
+    animation: rainbowBorder 3s linear infinite;
+}
+
+/* Khung nội dung Glassmorphic */
+.auth-box { 
+    width: 420px;
+    background: rgba(10, 17, 32, 0.97); /* Nền kính mờ trong suốt */
+    backdrop-filter: blur(25px); 
+    -webkit-backdrop-filter: blur(25px); 
+    border: none;
+    border-radius: 24px; 
+    padding: 40px 32px; 
+    text-align: center; 
+    position: relative;
+    overflow: hidden; /* Giới hạn ánh sáng lướt qua */
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15), 0 20px 40px var(--shadow);
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease;
+}
+
+.auth-box:hover {
+    transform: scale(1.04);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 255, 255, 0.05);
+}
+
+/* Hiệu ứng chuyển động lướt ánh sáng bóng loáng qua khung (2 giây) */
+@keyframes shineSweep {
+    0% { left: -150%; }
+    100% { left: 150%; }
+}
+
+.auth-box::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 80%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%);
+    transform: skewX(-25deg);
+    animation: shineSweep 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Đảm bảo nội dung luôn nằm trên lớp ánh sáng bóng loáng */
+.auth-box > * {
+    position: relative;
+    z-index: 2;
+}
+
+.auth-title { font-size:24px; margin-bottom:12px; background:linear-gradient(135deg,#00bfff,#ff2ea6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; font-weight: bold; line-height: 1.3; }
+.auth-btn { width:100%; padding:16px; border:none; border-radius:14px; font-weight:600; cursor:pointer; font-size:15px; background:linear-gradient(135deg,#00bfff,#ff2ea6); color:white; transition: opacity 0.3s ease, transform 0.1s ease; }
+.auth-btn:hover { opacity: 0.95; }
+.auth-btn:active { transform: scale(0.98); }
+
+/* Hiệu ứng dịch chuyển màu cầu vồng cho chữ đếm ngược */
+@keyframes rainbowText {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Định dạng chữ thông báo đếm ngược có hiệu ứng cầu vồng */
+#vMsg {
+    font-weight: 800;
+    font-size: 16px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    display: none;
+    background: linear-gradient(90deg, #ff2ea6, #00bfff, #4ade80, #eab308, #ff2ea6);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: rainbowText 3s linear infinite;
+    filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.5));
+}
+</style>
+</head>
+<body>
+
+<section id="verifyPage" class="auth-wrap">
+    <div class="auth-box-border">
+    <div class="auth-box">
+        <div class="auth-title" id="vTitle">Xác nhận nhiệm vụ</div>
+        <div id="vDesc" style="color: var(--text-sub); font-size: 14px; margin-bottom: 24px; line-height: 1.6;">Vui lòng vượt qua link rút gọn ở tab bên cạnh trước khi bấm xác nhận để nhận thưởng.</div>
+        
+        <div id="vRewardBox" style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 14px; border-radius: 14px; font-weight: bold; font-size: 22px; margin-bottom: 24px; letter-spacing: 0.5px; text-shadow: 0 0 8px rgba(74, 222, 128, 0.2);">
+            +0 đ
+        </div>
+        
+        <div id="vMsg"></div>
+        
+        <button id="vConfirmBtn" class="auth-btn" onclick="confirmTaskVerify()">XÁC NHẬN HOÀN THÀNH</button>
+    </div>
+    </div>
+</section>
+
+<script>
+const currentUser = localStorage.getItem("currentUser");
+let userDevice = "Thiết bị không xác định";
+let userIP = "Đang lấy IP...";
+
+// Lấy thông tin thiết bị và IP (Tĩnh)
+function getDeviceInfo() {
+    const ua = navigator.userAgent;
+    if (ua.indexOf("Win") !== -1) userDevice = "Windows PC";
+    else if (ua.indexOf("Mac") !== -1) userDevice = "MacOS";
+    else if (/Android/.test(ua)) userDevice = "Android";
+    else if (/iPhone|iPad|iPod/.test(ua)) userDevice = "iOS";
+    else if (ua.indexOf("Linux") !== -1) userDevice = "Linux";
+    
+    fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => { userIP = data.ip; })
+        .catch(() => { userIP = "Không xác định"; });
+}
+getDeviceInfo();
+
+// Hàm xử lý đếm ngược chuyển hướng dùng chung cho mọi trường hợp
+function startRedirectCountdown(msgElement, textTemplate) {
+    let countdown = 3;
+    msgElement.innerText = textTemplate.replace("{s}", countdown);
+    msgElement.style.display = 'block';
+    
+    const timer = setInterval(() => {
+        countdown--;
+        if (countdown <= 0) {
+            clearInterval(timer);
+            window.location.href = "index.html";
+        } else {
+            msgElement.innerText = textTemplate.replace("{s}", countdown);
+        }
+    }, 1000);
+}
+
+// Khởi tạo trạng thái giao diện khi tải trang
+window.onload = function() {
+    const msgEl = document.getElementById('vMsg');
+    const btnEl = document.getElementById('vConfirmBtn');
+
+    if (!currentUser) {
+        document.getElementById('vTitle').innerText = "❌ Lỗi";
+        document.getElementById('vDesc').innerText = "Vui lòng đăng nhập để thực hiện nhiệm vụ.";
+        btnEl.style.display = 'none';
+        startRedirectCountdown(msgEl, "Bạn sẽ quay về sau {s} giây nữa.");
+        return;
+    }
+
+    // Đọc mã code từ URL thanh địa chỉ
+    const urlParams = new URLSearchParams(window.location.search);
+    let urlCode = urlParams.get('code') || urlParams.get('session');
+
+    // Lọc sạch query string nhiễu từ các bên đối tác chuyển hướng
+    if (urlCode) {
+        urlCode = urlCode.split('/')[0].split('?')[0].split('&')[0];
+    }
+
+    if (!urlCode) {
+        document.getElementById('vTitle').innerText = "❌ Lỗi";
+        document.getElementById('vDesc').innerText = "Đường dẫn thiếu tham số mã xác nhận nhiệm vụ (?code=...).";
+        btnEl.style.display = 'none';
+        startRedirectCountdown(msgEl, "Bạn sẽ quay về sau {s} giây nữa.");
+        return;
+    }
+
+    // Đọc mã phiên chờ ngầm từ localStorage
+    const currentVerifySlug = localStorage.getItem("activeVerifySlug");
+    const ticketRaw = localStorage.getItem("current_ticket");
+
+    if (!currentVerifySlug || !ticketRaw) {
+        document.getElementById('vTitle').innerText = "❌ Lỗi";
+        document.getElementById('vDesc').innerText = "Phiên làm việc không tồn tại hoặc đã hết hạn.";
+        btnEl.style.display = 'none';
+        startRedirectCountdown(msgEl, "Bạn sẽ quay về sau {s} giây nữa.");
+        return;
+    }
+
+    const session = JSON.parse(ticketRaw);
+
+    // Xác minh tính trùng khớp của mã URL với localStorage
+    if (!session || session.slug !== currentVerifySlug || session.slug !== urlCode || session.status !== "pending") {
+        document.getElementById('vTitle').innerText = "❌ Lỗi";
+        document.getElementById('vDesc').innerText = "Mã xác nhận không hợp lệ hoặc không khớp với phiên làm việc hiện tại.";
+        btnEl.style.display = 'none';
+        startRedirectCountdown(msgEl, "Bạn sẽ quay về sau {s} giây nữa.");
+        return;
+    }
+
+    const tasks = JSON.parse(localStorage.getItem("systemTasks") || "[]");
+    const taskObj = tasks.find(t => t.id === session.taskId);
+    
+    document.getElementById('vTitle').innerText = "Xác nhận nhiệm vụ";
+    document.getElementById('vDesc').innerText = taskObj ? `Bạn đã hoàn thành vượt link cho nhiệm vụ: ${taskObj.name}. Hãy bấm nút dưới đây để nhận thưởng.` : "Hãy bấm nút dưới đây để xác nhận hoàn thành nhiệm vụ.";
+    document.getElementById('vRewardBox').innerText = "+" + Number(session.reward).toLocaleString('vi-VN') + " đ";
+};
+
+// Hàm xử lý ghi nhận phần thưởng, kiểm tra bảo mật và gửi tín hiệu cho index.html
+function confirmTaskVerify() {
+    const msgEl = document.getElementById('vMsg');
+    const btnEl = document.getElementById('vConfirmBtn');
+    
+    if (!currentUser) return;
+
+    // Đọc tham số URL
+    const urlParams = new URLSearchParams(window.location.search);
+    let urlCode = urlParams.get('code') || urlParams.get('session');
+
+    // Lọc sạch query string nhiễu do đối tác chuyển hướng
+    if (urlCode) {
+        urlCode = urlCode.split('/')[0].split('?')[0].split('&')[0];
+    }
+
+    // Đọc thông tin tấm vé ngầm
+    const currentVerifySlug = localStorage.getItem("activeVerifySlug");
+    const ticketRaw = localStorage.getItem("current_ticket");
+    
+    if (!urlCode || !currentVerifySlug || !ticketRaw) {
+        btnEl.disabled = true;
+        btnEl.style.opacity = '0.5';
+        btnEl.style.cursor = 'not-allowed';
+        startRedirectCountdown(msgEl, "Phiên không hợp lệ! Bạn sẽ quay về sau {s} giây nữa.");
+        return;
+    }
+    
+    const session = JSON.parse(ticketRaw);
+    
+    if (!session || session.slug !== currentVerifySlug || session.slug !== urlCode || session.status !== "pending") {
+        btnEl.disabled = true;
+        btnEl.style.opacity = '0.5';
+        btnEl.style.cursor = 'not-allowed';
+        startRedirectCountdown(msgEl, "Phiên không hợp lệ hoặc mã xác minh URL không khớp! Bạn sẽ quay về sau {s} giây nữa.");
+        return;
+    }
+    
+    // --- BỘ LỌC BẢO MẬT 1: KIỂM TRA THỜI GIAN LÀM TỐI THIỂU ---
+    const startTime = session.createdAt;
+    const endTime = Date.now();
+    const durationSeconds = Math.floor((endTime - startTime) / 1000);
+
+    if (durationSeconds < 25) {
+        // Hủy vé phạt ngay lập tức vì nghi vấn gian lận thời gian
+        localStorage.removeItem("current_ticket");
+        localStorage.removeItem("activeVerifySlug");
+        
+        btnEl.disabled = true;
+        btnEl.style.opacity = '0.5';
+        btnEl.style.cursor = 'not-allowed';
+        
+        document.getElementById('vTitle').innerText = "❌ Phát hiện gian lận";
+        document.getElementById('vDesc').innerText = "Thời gian thực hiện nhiệm vụ quá nhanh (dưới 25 giây). Hệ thống đã hủy bỏ phiên làm việc này.";
+        startRedirectCountdown(msgEl, "Bạn sẽ quay về sau {s} giây nữa.");
+        return;
+    }
+
+    // --- BỘ LỌC BẢO MẬT 2: KIỂM TRA NGUỒN CHUYỂN HƯỚNG REFERRER ---
+    const ref = document.referrer;
+    const isLocalFile = window.location.protocol === 'file:';
+    
+    // Chỉ kích hoạt bộ lọc Referrer Check khi chạy thực tế trên Web (HTTP/HTTPS) để tránh chặn nhầm khi test offline
+    if (!isLocalFile) {
+        if (!ref || ref.includes(window.location.hostname)) {
+            // Hủy vé phạt ngay lập tức
+            localStorage.removeItem("current_ticket");
+            localStorage.removeItem("activeVerifySlug");
+            
+            btnEl.disabled = true;
+            btnEl.style.opacity = '0.5';
+            btnEl.style.cursor = 'not-allowed';
+            
+            document.getElementById('vTitle').innerText = "❌ Không tìm thấy nguồn vượt link";
+            document.getElementById('vDesc').innerText = "Hệ thống phát hiện bạn truy cập trực tiếp vào trang xác nhận mà không thông qua việc vượt link từ đối tác.";
+            startRedirectCountdown(msgEl, "Bạn sẽ quay về sau {s} giây nữa.");
+            return;
+        }
+    }
+
+    // Ghi nhận nhật ký nếu làm nhanh bất thường nhưng vẫn nằm trong phạm vi cho phép (từ 25s đến 35s)
+    if (durationSeconds < 35) {
+        let cheatLogs = JSON.parse(localStorage.getItem("adminCheatLogs") || "[]");
+        const tasksListTemp = JSON.parse(localStorage.getItem("systemTasks") || "[]");
+        const currentTaskInfo = tasksListTemp.find(t => t.id === session.taskId);
+        
+        cheatLogs.unshift({
+            time: new Date().toLocaleString('vi-VN'),
+            username: currentUser,
+            taskName: currentTaskInfo ? currentTaskInfo.name : "Không rõ",
+            duration: durationSeconds,
+            ip: userIP,
+            device: userDevice
+        });
+        localStorage.setItem("adminCheatLogs", JSON.stringify(cheatLogs));
+    }
+
+    // ====================================================================
+    // CẬP NHẬT: ĐÁNH DẤU TRẠNG THÁI LÀ "COMPLETED" VÀ LƯU LẠI VÉ VẬN HÀNH
+    // ====================================================================
+    session.status = "completed";
+    localStorage.setItem("current_ticket", JSON.stringify(session));
+    
+    // Khóa nút bấm và hiển thị thông báo thành công chuyển hướng
+    btnEl.disabled = true;
+    btnEl.style.opacity = '0.5';
+    btnEl.style.cursor = 'not-allowed';
+    
+    startRedirectCountdown(msgEl, "Xác minh thành công! Bạn sẽ quay về sau {s} giây nữa.");
+}
+</script>
+</body>
+</html>
