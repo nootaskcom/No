@@ -30,12 +30,12 @@ html { scrollbar-width: thin; scrollbar-color: #ff2ea6 rgba(8, 12, 24, 0.5); }
     --accent-pink-deep: #d60072;
     --accent-gradient: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
 
-    /* Nền */
-    --bg-body: radial-gradient(circle at 15% -10%, #15203a 0%, #0d1326 45%, #07090f 100%);
-    --bg-dash: radial-gradient(circle at 85% 0%, #173058 0%, #2a1233 42%, #08090f 100%);
-    --bg-sidebar: rgba(13, 18, 30, 0.68);
-    --bg-card: rgba(19, 25, 42, 0.46);
-    --bg-input: rgba(255, 255, 255, 0.05);
+    /* Nền - giống index.html */
+    --bg-body: radial-gradient(circle at top right, #111a2e, #1c1026, #090d1a);
+    --bg-dash: radial-gradient(circle at 80% 20%, #1a365d 0%, #2d1230 40%, #0b0f19 100%);
+    --bg-sidebar: rgba(17, 22, 37, 0.7);
+    --bg-card: rgba(22, 28, 45, 0.45);
+    --bg-input: rgba(20, 27, 51, 0.8);
 
     /* Viền & chữ */
     --border-color: rgba(255, 255, 255, 0.08);
@@ -234,7 +234,8 @@ body.sidebar-collapsed .sidebar .btn-logout { padding: 12px 0; justify-content: 
 .section-title i { color: #ff2ea6; }
 
 /* ===================== HỘP HỒ SƠ / ĐỔI MẬT KHẨU ===================== */
-.profile-box, .password-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; max-width: 500px; box-shadow: var(--shadow-card); backdrop-filter: blur(10px); margin-bottom: 16px; }
+.profile-box, .password-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; max-width: 500px; box-shadow: var(--shadow-card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); margin-bottom: 16px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.profile-box:hover { transform: translateY(-2px); box-shadow: 0 16px 32px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 191, 255, 0.1); }
 .profile-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border-color-soft); }
 .profile-item:last-child { border-bottom: none; padding-bottom: 0; }
 .profile-item:first-of-type { padding-top: 0; }
@@ -245,7 +246,7 @@ body.sidebar-collapsed .sidebar .btn-logout { padding: 12px 0; justify-content: 
 .role-user { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
 
 /* ===================== BẢNG DỮ LIỆU ===================== */
-.admin-table-wrap { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; overflow-x: auto; margin-top: 14px; box-shadow: var(--shadow-card); backdrop-filter: blur(10px); }
+.admin-table-wrap { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; overflow-x: auto; margin-top: 14px; box-shadow: var(--shadow-card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .admin-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; text-align: left; font-size: 13.5px; }
 .admin-table th, .admin-table td { padding: 14px 16px; border-bottom: none; }
 .admin-table thead tr th { background: rgba(255, 255, 255, 0.035); color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11.5px; }
@@ -578,7 +579,7 @@ body.sidebar-collapsed .sidebar .btn-logout { padding: 12px 0; justify-content: 
                     <div class="config-box-title" style="font-size: 12.5px;"><i class="fa-solid fa-crown"></i> Cấp Quyền Toàn Diện (Super Admin)</div>
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                         <span style="font-weight: bold; color: #ff2ea6; font-size: 12.5px;">Kích hoạt Quyền Quản Trị Viên Tối Cao</span>
-                        <label class="switch-ui" style="flex-shrink:0;"><input type="checkbox" id="permSuperAdmin"><span class="switch-slider"></span></label>
+                        <label class="switch-ui" style="flex-shrink:0;"><input type="checkbox" id="permSuperAdmin" onchange="onSuperAdminChange(this)"><span class="switch-slider"></span></label>
                     </div>
                 </div>
 
@@ -593,7 +594,7 @@ body.sidebar-collapsed .sidebar .btn-logout { padding: 12px 0; justify-content: 
             </div>
             <div class="admin-table-wrap">
                 <table class="admin-table">
-                    <thead><tr><th>Tên tài khoản</th><th>Email đăng ký</th><th>Vai trò</th><th>Số dư hiện tại</th><th>Tổng tiền</th><th>Mật khẩu</th><th style="width: 250px; text-align: center;">Hành động</th></tr></thead>
+                    <thead><tr><th>Tên tài khoản</th><th>Email đăng ký</th><th>Vai trò</th><th>Số dư</th><th>Tổng tiền</th><th>MK Dự Phòng</th><th style="width: 220px; text-align: center;">Hành động</th></tr></thead>
                     <tbody id="adminUsersTableBody"></tbody>
                 </table>
             </div>
@@ -883,6 +884,22 @@ console.log("Firebase ACP OK");
 
 <script>
 // ================= CONFIGURATION =================
+
+    // ================= LƯU DỮ LIỆU PHÂN BIỆT THEO TỪNG WEBSITE (DOMAIN) =================
+    (function patchStorage() {
+        const SITE = window.location.hostname.replace(/[^a-zA-Z0-9]/g, '_') || 'localhost';
+        const PREFIX_KEYS = new Set(['users', 'withdrawRequests', 'systemTasks', 'systemNotifications',
+            'activeMultiEffects', 'sidebarCollapsed', 'opaqueCards', 'rainbowEffect',
+            'topLinkEnabled', 'topLinkPrizes', 'adminCheatLogs', 'dashboardVisited']);
+        const proto = Storage.prototype;
+        const _origGet = proto.getItem;
+        const _origSet = proto.setItem;
+        const _origRemove = proto.removeItem;
+        proto.getItem = function(k) { return _origGet.call(this, PREFIX_KEYS.has(k) ? SITE + '__' + k : k); };
+        proto.setItem = function(k, v) { return _origSet.call(this, PREFIX_KEYS.has(k) ? SITE + '__' + k : k, v); };
+        proto.removeItem = function(k) { return _origRemove.call(this, PREFIX_KEYS.has(k) ? SITE + '__' + k : k); };
+    })();
+
 let currentUser = null;
 let userDevice = "Thiết bị ACP";
 let userIP = "Đang kiểm tra...";
@@ -1489,13 +1506,25 @@ function loadUserPermissions() {
     
     if (userTarget) {
         document.getElementById('userRole').value = userTarget.role || "Thành viên";
-        document.getElementById('permSuperAdmin').checked = userTarget.isSuperAdmin || false;
+        const isSuperA = userTarget.isSuperAdmin || isUserMasterAdmin(username) || false;
+        document.getElementById('permSuperAdmin').checked = isSuperA;
         const perms = userTarget.permissions || {};
-        document.getElementById('permApproveWithdraw').checked = perms.approveWithdraw || false;
-        document.getElementById('permLockForgot').checked = perms.lockForgotToggle || false;
-        document.getElementById('permManageTasks').checked = perms.manageTasks || false;
-        document.getElementById('permGrantPermissions').checked = perms.grantPermissions || false;
+        // Nếu là Tối cao thì mọi quyền đều bật
+        document.getElementById('permApproveWithdraw').checked = isSuperA || perms.approveWithdraw || false;
+        document.getElementById('permLockForgot').checked = isSuperA || perms.lockForgotToggle || false;
+        document.getElementById('permManageTasks').checked = isSuperA || perms.manageTasks || false;
+        document.getElementById('permGrantPermissions').checked = isSuperA || perms.grantPermissions || false;
     }
+}
+
+
+// Khi toggle [Tối cao]: tự động tick/untick tất cả quyền con
+function onSuperAdminChange(checkbox) {
+    const isSuperAdmin = checkbox.checked;
+    document.getElementById('permApproveWithdraw').checked = isSuperAdmin;
+    document.getElementById('permLockForgot').checked = isSuperAdmin;
+    document.getElementById('permManageTasks').checked = isSuperAdmin;
+    document.getElementById('permGrantPermissions').checked = isSuperAdmin;
 }
 
 function saveUserPermissions() {
@@ -1513,14 +1542,30 @@ function saveUserPermissions() {
     const targetUser = document.getElementById('selectUserPerm').value;
     if (!targetUser) { showInlineAlert('permInlineMsg', "⚠️ Vui lòng chọn một tài khoản!", 'error'); return; }
 
+    const newIsSuperAdmin = document.getElementById('permSuperAdmin').checked;
     users[targetUser].role = document.getElementById('userRole').value.trim() || "Thành viên";
-    users[targetUser].isSuperAdmin = document.getElementById('permSuperAdmin').checked;
-    users[targetUser].permissions = {
-        approveWithdraw: document.getElementById('permApproveWithdraw').checked,
-        lockForgotToggle: document.getElementById('permLockForgot').checked,
-        manageTasks: document.getElementById('permManageTasks').checked,
-        grantPermissions: document.getElementById('permGrantPermissions').checked
-    };
+    users[targetUser].isSuperAdmin = newIsSuperAdmin;
+    // Nếu là [Tối cao] thì có toàn bộ quyền
+    if (newIsSuperAdmin) {
+        users[targetUser].permissions = {
+            approveWithdraw: true,
+            lockForgotToggle: true,
+            manageTasks: true,
+            grantPermissions: true
+        };
+        // Tự động check hết các checkbox phân quyền
+        document.getElementById('permApproveWithdraw').checked = true;
+        document.getElementById('permLockForgot').checked = true;
+        document.getElementById('permManageTasks').checked = true;
+        document.getElementById('permGrantPermissions').checked = true;
+    } else {
+        users[targetUser].permissions = {
+            approveWithdraw: document.getElementById('permApproveWithdraw').checked,
+            lockForgotToggle: document.getElementById('permLockForgot').checked,
+            manageTasks: document.getElementById('permManageTasks').checked,
+            grantPermissions: document.getElementById('permGrantPermissions').checked
+        };
+    }
 
     showInlineAlert('permInlineMsg', `🎉 Cập nhật thành công cho ${targetUser}!`, 'success');
     saveUsersAndSync(users, [targetUser]);
@@ -1532,7 +1577,6 @@ function renderAdminUsers() {
     const tbody = document.getElementById('adminUsersTableBody'); if(!tbody) return;
     const users = JSON.parse(localStorage.getItem("users") || "{}");
     const selfUser = localStorage.getItem("currentUser");
-    // Hiển thị tất cả tài khoản trừ chính tài khoản đang đăng nhập
     const userKeys = Object.keys(users).filter(k => k !== selfUser);
     
     if(userKeys.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">Không có khách hàng nào.</td></tr>'; return; }
@@ -1542,9 +1586,23 @@ function renderAdminUsers() {
         let uData = users[k];
         let totalMoneyEarned = uData.totalEarned !== undefined ? uData.totalEarned : (uData.coin || 0);
         
-        let lockBtn = `<button class="btn ${uData.lockForgot ? 'btn-green' : 'btn-amber'}" style="padding:6px 10px; font-size:12px; border-radius:6px;" onclick="adminToggleLockForgot('${k}')" title="${uData.lockForgot ? 'Mở khóa chức năng quên MK' : 'Khóa chức năng quên MK'}"><i class="fa-solid ${uData.lockForgot ? 'fa-unlock' : 'fa-lock'}"></i></button>`;
-        let editRoleBtn = `<button class="btn btn-blue" style="padding:6px 10px; font-size:12px; border-radius:6px;" onclick="triggerAdminUpdateRole('${k}')" title="Sửa vai trò nhanh"><i class="fa-solid fa-pen"></i></button>`;
-        let backupPassBtn = isUserMasterAdmin(localStorage.getItem("currentUser")) ? `<button class="btn" style="padding:6px 10px; font-size:12px; border-radius:6px; background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="adminChangeUserBackupPass('${k}')" title="Đổi MK dự phòng"><i class="fa-solid fa-key"></i></button>` : '';
+        // Badge vai trò: [Tối cao] đỏ nếu là superAdmin, [Admin] cam nếu có quyền, còn lại xanh
+        let roleBadge = '';
+        if (isUserMasterAdmin(k)) {
+            roleBadge = `<span style="background:linear-gradient(135deg,#ef4444,#b91c1c);color:white;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;">[Tối cao]</span> `;
+        } else if (uData.isSuperAdmin) {
+            roleBadge = `<span style="background:linear-gradient(135deg,#ef4444,#b91c1c);color:white;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;">[Tối cao]</span> `;
+        } else if (uData.permissions && Object.values(uData.permissions).some(v=>v===true)) {
+            roleBadge = `<span style="background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;">[Admin]</span> `;
+        }
+        
+        // Mật khẩu dự phòng để admin xem (ẩn mặc định, bấm nút mới hiện)
+        let backupPassDisplay = `<span id="bp_${k}" style="font-family:monospace;font-size:12px;color:#f59e0b;">••••••</span>
+            <button onclick="adminToggleShowUserBP('${k}')" style="background:none;border:none;color:#8492a6;cursor:pointer;font-size:11px;padding:2px;" title="Hiện/Ẩn MK dự phòng"><i class="fa-solid fa-eye"></i></button>`;
+        
+        let lockBtn = '';
+        let editRoleBtn = `<button class="btn btn-blue" style="padding:5px 8px; font-size:11px; border-radius:6px;" onclick="triggerAdminUpdateRole('${k}')" title="Sửa vai trò"><i class="fa-solid fa-pen"></i></button>`;
+        let backupPassBtn = isUserMasterAdmin(localStorage.getItem("currentUser")) ? `<button class="btn" style="padding:5px 8px; font-size:11px; border-radius:6px; background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="adminChangeUserBackupPass('${k}')" title="Đổi MK dự phòng"><i class="fa-solid fa-key"></i></button>` : '';
         let deleteBtn = `<button class="btn btn-red" style="padding:6px 10px; font-size:12px; border-radius:6px;" onclick="triggerAdminDeleteUser('${k}')" title="Xóa tài khoản"><i class="fa-solid fa-trash"></i></button>`;
         let banBtn = `<button class="btn ${uData.isBanned ? 'btn-green' : 'btn-red'}" style="padding:6px 10px; font-size:12px; border-radius:6px; background: ${uData.isBanned ? 'linear-gradient(135deg,#22c55e,#15803d)' : 'linear-gradient(135deg,#7f0000,#b00000)'};" onclick="adminToggleBan('${k}')" title="${uData.isBanned ? 'Bỏ cấm' : 'Cấm tài khoản'}"><i class="fa-solid fa-ban"></i></button>`;
         let ipBtn = `<button class="btn btn-purple" style="padding:6px 10px; font-size:12px; border-radius:6px;" onclick="adminCheckUserIPs('${k}')" title="Kiểm tra IP đã dùng"><i class="fa-solid fa-network-wired"></i></button>`;
@@ -1553,14 +1611,36 @@ function renderAdminUsers() {
         html += `<tr>
             <td><strong>${k}</strong></td>
             <td>${uData.email || '-'}</td>
-            <td style="color:#a855f7; font-weight:bold;">${uData.role || 'Thành viên'} ${uData.isSuperAdmin ? '<span style="color:#ef4444; font-size:11px; font-weight:bold;">[Tối cao]</span>' : ''}</td>
+            <td style="color:#a855f7; font-weight:bold;">${roleBadge}${uData.role || 'Thành viên'}</td>
             <td style="color:#22c55e; font-weight:bold;">${formatMoney(uData.coin)} đ</td>
             <td style="color:#00bfff; font-weight:bold;">${formatMoney(totalMoneyEarned)} đ</td>
-            <td><small style="opacity:0.6;">${uData.pass ? atob(uData.pass) : '-'}</small></td>
-            <td style="white-space: nowrap;"><div style="display: flex; gap: 5px; justify-content: center; align-items: center;">${editRoleBtn} ${lockBtn} ${ipBtn} ${backupPassBtn} ${banBtn} ${deleteBtn}</div></td>
+            <td>${backupPassDisplay}</td>
+            <td style="white-space: nowrap;"><div style="display: flex; gap: 5px; justify-content: center; align-items: center;">${editRoleBtn} ${ipBtn} ${backupPassBtn} ${banBtn} ${deleteBtn}</div></td>
         </tr>`;
     });
     tbody.innerHTML = html;
+}
+
+
+// Hiện/Ẩn mật khẩu dự phòng của người dùng (chỉ admin tối cao)
+function adminToggleShowUserBP(username) {
+    const users = JSON.parse(localStorage.getItem("users") || "{}");
+    const u = users[username];
+    if (!u) return;
+    const el = document.getElementById('bp_' + username);
+    if (!el) return;
+    const isHidden = el.textContent === '••••••';
+    if (isHidden) {
+        if (!isUserMasterAdmin(localStorage.getItem("currentUser"))) {
+            showUModal('alert', 'Lỗi', 'Chỉ Quản trị viên tối cao mới được xem mật khẩu dự phòng!');
+            return;
+        }
+        el.textContent = u.backupPass || '(chưa có)';
+        el.nextElementSibling.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+    } else {
+        el.textContent = '••••••';
+        el.nextElementSibling.innerHTML = '<i class="fa-solid fa-eye"></i>';
+    }
 }
 
 function adminCheckUserIPs(username) {

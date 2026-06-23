@@ -1055,7 +1055,6 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
         <div id="loginError" class="auth-error"></div>
         <input id="logUser" class="auth-input" placeholder="Tên đăng nhập">
         <input id="logPass" class="auth-input" type="password" placeholder="Mật khẩu">
-        <a class="auth-forgot" onclick="showForgotPassword()">Quên mật khẩu?</a>
         <button class="auth-btn" onclick="login()">Đăng nhập ngay</button>
         
         <!-- Nút Đăng nhập với Google thật -->
@@ -1094,17 +1093,6 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
     </div>
 </section>
 
-<!-- ================= QUÊN MẬT KHẨU (CẬP NHẬT) ================= -->
-<section id="forgotPage" class="auth-wrap hidden">
-    <div class="auth-box">
-        <div class="auth-title">Khôi phục mật khẩu</div>
-        <div class="auth-sub">Nhập tên đăng nhập và email của bạn</div>
-        <input id="forgotUser" class="auth-input" placeholder="Tên đăng nhập">
-        <input id="forgotEmail" class="auth-input" type="email" placeholder="Email đăng ký">
-        <button class="auth-btn" onclick="sendResetLink()">Nhận lại mật khẩu</button>
-        <div class="auth-link"><span onclick="goLogin()">← Quay lại đăng nhập</span></div>
-    </div>
-</section>
 
 <section id="dashPage" class="dash-container hidden">
     <aside class="sidebar">
@@ -4737,7 +4725,6 @@ const userData = userSnap.data();
         closeCropModal();
     }
 
-    function showForgotPassword() { hideAll(); document.getElementById('forgotPage').classList.remove('hidden'); }
 
     // ================= QUÊN MẬT KHẨU - GỬI MẬT KHẨU DỰ PHÒNG THAY VÌ PASS THƯỜNG =================
     function sendResetLink() {
@@ -4769,7 +4756,7 @@ const userData = userSnap.data();
 
     // ================= ĐIỀU CHỈNH ẨN HIỆN NÚT GEAR CÀI ĐẶT CHỈ TRONG DASHBOARD =================
     function hideAll() { 
-        const pages = ['homePage', 'loginPage', 'registerPage', 'forgotPage', 'dashPage']; 
+        const pages = ['homePage', 'loginPage', 'registerPage', 'dashPage']; 
         pages.forEach(id => { 
             const p = document.getElementById(id); 
             if(p) p.classList.add('hidden'); 
@@ -4815,6 +4802,40 @@ const userData = userSnap.data();
     }
 
     function logout() { executeLogout(); }
+
+
+    // ================= LƯU DỮ LIỆU PHÂN BIỆT THEO TỪNG WEBSITE (DOMAIN) =================
+    // Để mỗi domain có dữ liệu riêng, tất cả localStorage đều dùng prefix domain
+    const _SITE_KEY = window.location.hostname.replace(/[^a-zA-Z0-9]/g, '_') || 'localhost';
+    const _PREFIXED_KEYS = ['users', 'withdrawRequests', 'systemTasks', 'systemNotifications', 
+                             'activeMultiEffects', 'sidebarCollapsed', 'opaqueCards', 'rainbowEffect',
+                             'topLinkEnabled', 'topLinkPrizes', 'adminCheatLogs', 'dashboardVisited'];
+    
+    // Override localStorage.getItem/setItem/removeItem để tự động thêm prefix
+    const _origGet = localStorage.getItem.bind(localStorage);
+    const _origSet = localStorage.setItem.bind(localStorage);
+    const _origRemove = localStorage.removeItem.bind(localStorage);
+    
+    function _siteKey(k) {
+        return _PREFIXED_KEYS.includes(k) ? `${_SITE_KEY}__${k}` : k;
+    }
+    
+    const _origGetItem = Storage.prototype.getItem;
+    const _origSetItem = Storage.prototype.setItem;
+    const _origRemoveItem = Storage.prototype.removeItem;
+
+    // Tất cả keys quan trọng sẽ có prefix domain khi lưu vào localStorage
+    (function patchStorage() {
+        const proto = Storage.prototype;
+        const _origGet2 = proto.getItem;
+        const _origSet2 = proto.setItem;
+        const _origRemove2 = proto.removeItem;
+        const SITE = _SITE_KEY;
+        const PREFIX_KEYS = new Set(_PREFIXED_KEYS);
+        proto.getItem = function(k) { return _origGet2.call(this, PREFIX_KEYS.has(k) ? SITE + '__' + k : k); };
+        proto.setItem = function(k, v) { return _origSet2.call(this, PREFIX_KEYS.has(k) ? SITE + '__' + k : k, v); };
+        proto.removeItem = function(k) { return _origRemove2.call(this, PREFIX_KEYS.has(k) ? SITE + '__' + k : k); };
+    })();
 
     window.onload = function() {
         initTasks();
